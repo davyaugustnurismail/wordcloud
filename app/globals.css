@@ -78,6 +78,27 @@
   --font-mono: var(--font-jetbrains), ui-monospace, monospace;
 }
 
+@theme {
+  --text-xs--line-height: normal;
+  --text-sm--line-height: normal;
+  --text-base--line-height: normal;
+  --text-lg--line-height: normal;
+  --text-xl--line-height: normal;
+  --text-2xl--line-height: normal;
+  --text-3xl--line-height: normal;
+  --text-4xl--line-height: normal;
+  --text-5xl--line-height: normal;
+  --text-6xl--line-height: normal;
+}
+
+html {
+  line-height: normal;
+}
+
+@utility min-h-view {
+  min-height: calc(100dvh / var(--zoom, 1));
+}
+
 body {
   background: var(--bg);
   color: var(--fg);

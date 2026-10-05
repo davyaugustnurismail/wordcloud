@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent } from "react";
 import { CODE_LENGTH, normalizeCode } from "@/lib/code";
-import { AlertCircleIcon, ChevronLeftIcon, ClockIcon, LockIcon, SpinnerIcon } from "./icons";
+import { AlertCircleIcon, ChevronLeftIcon, ClockIcon, LockIcon, ScanIcon, SpinnerIcon } from "./icons";
+import { QrScanner } from "./qr-scanner";
 
 const PIN_LENGTH = 6;
 
@@ -20,8 +21,17 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [scanning, setScanning] = useState(false);
+  const pinRef = useRef<HTMLInputElement>(null);
 
   const ready = code.length === CODE_LENGTH && pin.length === PIN_LENGTH;
+
+  const onScanned = useCallback((scanned: string) => {
+    setCode(scanned);
+    setError(null);
+    setScanning(false);
+    setTimeout(() => pinRef.current?.focus(), 0);
+  }, []);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -48,9 +58,9 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
   };
 
   return (
-    <main className="flex flex-1 justify-center px-[22px] pb-8 pt-7 md:items-center md:px-6 md:pb-16 md:pt-8">
+    <main className="flex flex-1 flex-col items-center px-[22px] pb-7 pt-7 md:justify-center md:px-6 md:pb-16 md:pt-8">
       <div className="flex w-full max-w-[1040px] flex-wrap content-start items-center justify-center gap-x-16 gap-y-6 md:content-center md:gap-y-12">
-        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_360px] flex-col gap-5">
+        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_360px] flex-col gap-6 md:gap-5">
           <Link href="/" className="flex items-center gap-1.5 self-start text-sm font-semibold text-muted md:text-[15px]">
             <ChevronLeftIcon size={16} />
             Kembali
@@ -77,12 +87,15 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
               <span>Sesi admin aktif 24 jam di device ini.</span>
             </li>
           </ul>
-          <Link href="/admin/login" className="self-start text-[15px] font-bold text-fg underline underline-offset-[3px]">
+          <Link
+            href="/admin/login"
+            className="hidden self-start text-[15px] font-bold text-fg underline underline-offset-[3px] md:inline"
+          >
             Masuk sebagai admin global
           </Link>
         </div>
 
-        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_420px] flex-col gap-5 md:rounded-3xl md:border md:border-line md:bg-surface md:p-8">
+        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_420px] flex-col gap-6 md:gap-5 md:rounded-3xl md:border md:border-line md:bg-surface md:p-8">
           <form onSubmit={submit} className="m-0 flex flex-col gap-4 md:gap-[18px]">
             <div className="flex flex-col gap-2">
               <label htmlFor="kode-admin" className="text-sm font-bold md:text-[15px]">
@@ -117,6 +130,7 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
                   setError(null);
                 }}
                 autoComplete="off"
+                ref={pinRef}
                 autoFocus={code.length === CODE_LENGTH}
                 aria-describedby="pin-bantu"
                 aria-invalid={error ? true : undefined}
@@ -141,8 +155,28 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
               {loading ? <SpinnerIcon size={20} /> : null}
             </button>
           </form>
+          <div className="flex items-center gap-3 text-[13px] text-muted">
+            <span className="h-px flex-1 bg-line" />
+            atau
+            <span className="h-px flex-1 bg-line" />
+          </div>
+          <button
+            type="button"
+            onClick={() => setScanning(true)}
+            className="flex h-[54px] items-center justify-center gap-2.5 rounded-2xl border border-line bg-transparent text-[15px] font-bold text-fg"
+          >
+            <ScanIcon size={20} />
+            Scan QR admin
+          </button>
         </div>
       </div>
+      <Link
+        href="/admin/login"
+        className="mt-auto self-center pt-6 text-sm font-bold text-fg underline underline-offset-[3px] md:hidden"
+      >
+        Masuk sebagai admin global
+      </Link>
+      {scanning ? <QrScanner onCode={onScanned} onClose={() => setScanning(false)} /> : null}
     </main>
   );
 }

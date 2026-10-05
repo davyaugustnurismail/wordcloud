@@ -39,9 +39,9 @@ export function JoinForm() {
   };
 
   return (
-    <main className="flex flex-1 justify-center px-[22px] pb-8 pt-7 md:items-center md:px-6 md:pb-16 md:pt-8">
+    <main className="flex flex-1 flex-col items-center px-[22px] pb-8 pt-7 md:justify-center md:px-6 md:pb-16 md:pt-8">
       <div className="flex w-full max-w-[1040px] flex-wrap content-start items-center justify-center gap-x-16 gap-y-7 md:content-center md:gap-y-12">
-        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_360px] flex-col gap-5">
+        <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_360px] flex-col gap-7 md:gap-5">
           <Link href="/" className="flex items-center gap-1.5 self-start text-sm font-semibold text-muted md:text-[15px]">
             <ChevronLeftIcon size={16} />
             Kembali
@@ -108,11 +108,15 @@ export function JoinForm() {
               {loading ? <SpinnerIcon size={20} /> : <ArrowRightIcon size={20} strokeWidth={2.2} />}
             </button>
           </form>
-          <div className="flex items-start gap-3 rounded-[14px] bg-surface2 px-4 py-3.5 text-[13px] leading-normal md:text-sm">
+          <div className="hidden items-start gap-3 rounded-[14px] bg-surface2 px-4 py-3.5 text-sm leading-normal md:flex">
             <ScanIcon size={18} className="mt-px shrink-0" />
             <span>Punya kamera? Scan QR di layar Siap tayang untuk langsung masuk.</span>
           </div>
         </div>
+      </div>
+      <div className="mt-auto flex w-full max-w-[520px] items-start gap-3 rounded-[14px] bg-surface2 px-4 py-3.5 text-[13px] leading-normal md:hidden">
+        <ScanIcon size={18} className="mt-px shrink-0" />
+        <span>Punya kamera? Scan QR di layar Siap tayang untuk langsung masuk.</span>
       </div>
     </main>
   );

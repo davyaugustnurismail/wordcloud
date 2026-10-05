@@ -202,7 +202,7 @@ export function AdminShell({ children }: { children: ReactNode }) {
   const { connected, ready } = useAdmin();
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg text-fg">
+    <div className="flex min-h-view flex-col bg-bg text-fg">
       <Header />
       <Tabs />
       {!connected && ready ? (

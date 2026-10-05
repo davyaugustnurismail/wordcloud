@@ -135,7 +135,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
   } as CSSProperties;
 
   return (
-    <div className="relative flex min-h-dvh flex-col overflow-hidden" style={{ background: theme.background, color: theme.text }}>
+    <div className="relative flex min-h-view flex-col overflow-hidden" style={{ background: theme.background, color: theme.text }}>
       {theme.usesImage ? (
         <>
           {settings.inputBgId ? (
@@ -174,7 +174,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
         </div>
 
         <div className="flex flex-1 items-center justify-center pb-14 md:pb-10">
-          <div className="relative w-full max-w-[820px]">
+          <div className="relative w-full max-w-[926px]">
             {sent !== null ? (
               <div
                 role="status"

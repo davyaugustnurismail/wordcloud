@@ -48,7 +48,7 @@ export function GlobalShell({ children }: { children: ReactNode }) {
   };
 
   return (
-    <div className="flex min-h-dvh flex-col bg-bg text-fg">
+    <div className="flex min-h-view flex-col bg-bg text-fg">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-4 py-3.5 md:px-8">
         <span className="flex h-7 items-center gap-1.5 rounded-full bg-surface2 px-2.5 text-xs font-extrabold tracking-[0.06em]">
           <ShieldIcon size={14} strokeWidth={2.2} />

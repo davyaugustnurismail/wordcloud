@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Fredoka, JetBrains_Mono, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import { ViewportScale } from "@/components/viewport-scale";
+import { applyViewportScale } from "@/lib/viewport-scale";
 import "./globals.css";
 
 const baloo = Baloo_2({ subsets: ["latin"], weight: "800", variable: "--font-baloo", display: "swap" });
@@ -18,6 +20,7 @@ export const viewport: Viewport = {
 };
 
 const themeScript = `try{var t=localStorage.getItem("wc-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t}}catch(e){}`;
+const scaleScript = `try{(${applyViewportScale.toString()})()}catch(e){}`;
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -29,8 +32,12 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     >
       <head>
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+        <script dangerouslySetInnerHTML={{ __html: scaleScript }} />
       </head>
-      <body className="min-h-dvh antialiased">{children}</body>
+      <body className="min-h-view antialiased">
+        <ViewportScale />
+        {children}
+      </body>
     </html>
   );
 }
