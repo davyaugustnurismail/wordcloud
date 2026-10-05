@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
+import { copyText } from "@/lib/clipboard";
 import { ACCEPTED_IMAGE_TYPES, checkImageFile, IMAGE_FILE_HELP, uploadErrorMessage } from "@/lib/image-file";
 import type { LibraryImage } from "@/lib/library";
 import {
@@ -13,7 +14,7 @@ import {
   type PhotowallTheme,
   type SessionDefaults,
 } from "@/lib/settings";
-import { AlertCircleIcon, CheckIcon, SpinnerIcon, UploadIcon } from "../icons";
+import { AlertCircleIcon, CheckIcon, CopyIcon, EyeIcon, EyeOffIcon, SpinnerIcon, UploadIcon } from "../icons";
 
 const themeLabel = (value: string) => value.charAt(0).toUpperCase() + value.slice(1);
 const selectClass =
@@ -228,10 +229,121 @@ function LibrarySection({ initial }: { initial: LibraryImage[] }) {
   );
 }
 
-function PasswordSection() {
+type PasswordTarget = "creator" | "global";
+type RevealState = "hidden" | "loading" | "shown" | "missing" | "error";
+
+const PASSWORD_VISIBLE_MS = 20_000;
+
+const passwordSections: Record<PasswordTarget, { id: string; title: string; description: string; fieldPrefix: string }> = {
+  creator: {
+    id: "password",
+    title: "Password pembuat sesi",
+    description: "Siapa pun yang tahu password ini bisa membuat sesi. Sesi yang sudah berjalan tidak terpengaruh.",
+    fieldPrefix: "pw-creator",
+  },
+  global: {
+    id: "password-global",
+    title: "Password admin global",
+    description: "Dipakai untuk masuk ke admin global. Admin global yang sedang login tidak ikut keluar saat password diganti.",
+    fieldPrefix: "pw-global",
+  },
+};
+
+function PasswordReveal({ target, label }: { target: PasswordTarget; label: string }) {
+  const [state, setState] = useState<RevealState>("hidden");
+  const [password, setPassword] = useState("");
+  const [copied, setCopied] = useState(false);
+  const iconButton =
+    "flex h-[46px] w-[46px] shrink-0 items-center justify-center rounded-[10px] border border-line bg-transparent text-fg disabled:opacity-60";
+
+  useEffect(() => {
+    if (state !== "shown") return;
+    const timer = setTimeout(() => {
+      setPassword("");
+      setState("hidden");
+    }, PASSWORD_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const reveal = async () => {
+    setState("loading");
+    try {
+      const response = await fetch(`/api/admin/password/${target}`, { cache: "no-store" });
+      if (!response.ok) throw new Error("password");
+      const body = (await response.json()) as { password: string | null };
+      if (body.password) {
+        setPassword(body.password);
+        setState("shown");
+      } else {
+        setState("missing");
+      }
+    } catch {
+      setState("error");
+    }
+  };
+
+  const hide = () => {
+    setPassword("");
+    setState("hidden");
+  };
+
+  return (
+    <div className="flex flex-col gap-2">
+      <span className="text-sm font-bold">Password saat ini</span>
+      <div className="flex items-center gap-2">
+        <span
+          aria-live="polite"
+          className="box-border flex h-[46px] min-w-0 flex-1 items-center overflow-x-auto rounded-[10px] border border-line bg-field px-3 font-mono text-[15px] font-bold"
+        >
+          {state === "shown" ? password : state === "error" ? "Gagal memuat" : "••••••••"}
+        </span>
+        {state === "shown" ? (
+          <>
+            <button type="button" onClick={hide} aria-label={`Sembunyikan ${label}`} className={iconButton}>
+              <EyeOffIcon size={18} />
+            </button>
+            <button
+              type="button"
+              onClick={async () => setCopied(await copyText(password))}
+              aria-label={`Salin ${label}`}
+              className={iconButton}
+            >
+              {copied ? <CheckIcon size={18} /> : <CopyIcon size={18} />}
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            disabled={state === "loading"}
+            onClick={reveal}
+            aria-label={`Lihat ${label}`}
+            className={iconButton}
+          >
+            {state === "loading" ? <SpinnerIcon size={18} /> : <EyeIcon size={18} />}
+          </button>
+        )}
+      </div>
+      {state === "missing" ? (
+        <span className="text-xs text-muted">
+          Belum tersimpan, karena password ini berasal dari konfigurasi server. Ganti password agar bisa dilihat di sini.
+        </span>
+      ) : null}
+    </div>
+  );
+}
+
+function PasswordSection({ target }: { target: PasswordTarget }) {
+  const config = passwordSections[target];
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [version, setVersion] = useState(0);
   const [message, setMessage] = useState<{ ok: boolean; text: string } | null>(null);
 
   const submit = async (event: FormEvent) => {
@@ -249,7 +361,7 @@ function PasswordSection() {
     setBusy(true);
     setMessage(null);
     try {
-      const response = await fetch("/api/admin/password", {
+      const response = await fetch(`/api/admin/password/${target}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ password, confirm }),
@@ -257,7 +369,8 @@ function PasswordSection() {
       if (response.ok) {
         setPassword("");
         setConfirm("");
-        setMessage({ ok: true, text: "Password diganti. Sesi yang sudah berjalan tidak terpengaruh." });
+        setVersion((current) => current + 1);
+        setMessage({ ok: true, text: "Password diganti." });
       } else {
         setMessage({ ok: false, text: "Password gagal diganti. Coba lagi." });
       }
@@ -269,21 +382,20 @@ function PasswordSection() {
   };
 
   return (
-    <section id="password" className={sectionClass}>
+    <section id={config.id} className={sectionClass}>
       <div className="flex flex-col gap-1">
-        <h2 className="m-0 text-xl font-extrabold">Password pembuat sesi</h2>
-        <p className="m-0 text-sm text-muted">
-          Siapa pun yang tahu password ini bisa membuat sesi. Sesi yang sudah berjalan tidak terpengaruh.
-        </p>
+        <h2 className="m-0 text-xl font-extrabold">{config.title}</h2>
+        <p className="m-0 text-sm text-muted">{config.description}</p>
       </div>
+      <PasswordReveal key={version} target={target} label={config.title.toLowerCase()} />
       <form onSubmit={submit} className="m-0 flex flex-col gap-[18px]">
         <div className="flex flex-wrap gap-4">
           <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-2">
-            <label htmlFor="pw-baru" className="text-sm font-bold">
+            <label htmlFor={`${config.fieldPrefix}-baru`} className="text-sm font-bold">
               Password baru
             </label>
             <input
-              id="pw-baru"
+              id={`${config.fieldPrefix}-baru`}
               type="password"
               value={password}
               onChange={(event) => setPassword(event.target.value)}
@@ -292,11 +404,11 @@ function PasswordSection() {
             />
           </div>
           <div className="flex min-w-0 flex-[1_1_240px] flex-col gap-2">
-            <label htmlFor="pw-ulang" className="text-sm font-bold">
+            <label htmlFor={`${config.fieldPrefix}-ulang`} className="text-sm font-bold">
               Ulangi password
             </label>
             <input
-              id="pw-ulang"
+              id={`${config.fieldPrefix}-ulang`}
               type="password"
               value={confirm}
               onChange={(event) => setConfirm(event.target.value)}
@@ -325,7 +437,8 @@ export function GlobalSettings({ defaults, library }: { defaults: SessionDefault
     <main className="flex min-w-0 flex-col gap-5 px-4 py-6 md:px-8 md:pb-12">
       <DefaultsSection initial={defaults} />
       <LibrarySection initial={library} />
-      <PasswordSection />
+      <PasswordSection target="creator" />
+      <PasswordSection target="global" />
     </main>
   );
 }

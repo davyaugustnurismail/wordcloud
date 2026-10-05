@@ -14,6 +14,7 @@ const navItems: NavItem[] = [
   { href: "/admin/settings", hash: "#default", label: "Default sesi baru", icon: <SlidersIcon size={18} /> },
   { href: "/admin/settings", hash: "#gambar", label: "Pustaka gambar", icon: <ImageIcon size={18} /> },
   { href: "/admin/settings", hash: "#password", label: "Password pembuat", icon: <LockIcon size={18} /> },
+  { href: "/admin/settings", hash: "#password-global", label: "Password admin global", icon: <ShieldIcon size={18} /> },
 ];
 
 function useHash(): string {
