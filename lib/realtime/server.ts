@@ -2,6 +2,7 @@ import type { Server as HttpServer } from "node:http";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { Server } from "socket.io";
 import { adminCookieName, verifyAdminToken } from "../auth/admin-cookie";
+import { GLOBAL_COOKIE_NAME, verifyGlobalToken } from "../auth/global-cookie";
 import { parseCookieHeader } from "../auth/cookies";
 import { openReadyToken, readyCookieName } from "../auth/ready-cookie";
 import { isValidCode, normalizeCode } from "../code";
@@ -57,7 +58,9 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
         if (!opened) return next(new Error("unauthorized"));
       }
       if (parsed.data.role === "admin") {
-        const allowed = await verifyAdminToken(cookies[adminCookieName(code)], code);
+        const allowed =
+          (await verifyGlobalToken(cookies[GLOBAL_COOKIE_NAME])) ||
+          (await verifyAdminToken(cookies[adminCookieName(code)], code, session.adminEpoch));
         if (!allowed) return next(new Error("unauthorized"));
       }
 

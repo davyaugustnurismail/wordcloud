@@ -1,10 +1,9 @@
 import { randomInt } from "node:crypto";
 import { argon2id, hash, verify } from "argon2";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { CODE_ALPHABET, CODE_LENGTH } from "./code";
 import { getDb } from "./db";
-import { appSettings, sessions } from "./db/schema";
-import { getEnv } from "./env";
+import { sessions } from "./db/schema";
 import type { ControlAction, SessionState } from "./realtime/events";
 import { parseSettings, type SessionSettings } from "./settings";
 
@@ -13,6 +12,7 @@ export type SessionRecord = {
   code: string;
   name: string;
   status: "active" | "ended";
+  adminEpoch: number;
   settings: SessionSettings;
   state: SessionState;
 };
@@ -37,10 +37,12 @@ function toRecord(row: typeof sessions.$inferSelect): SessionRecord {
     code: row.code,
     name: row.name,
     status: row.status,
+    adminEpoch: row.adminEpoch,
     settings: parseSettings(row.settings),
     state: {
       paused: row.paused,
       frozen: row.frozen,
+      ended: row.status === "ended",
       clearedAt: row.clearedAt ? row.clearedAt.getTime() : null,
     },
   };
@@ -114,22 +116,24 @@ export async function applyControl(sessionId: string, action: ControlAction): Pr
   if (action === "freeze") patch.frozen = true;
   if (action === "unfreeze") patch.frozen = false;
   if (action === "clear") patch.clearedAt = new Date();
+  if (action === "end") {
+    patch.status = "ended";
+    patch.endedAt = new Date();
+  }
 
   const [row] = await getDb().update(sessions).set(patch).where(eq(sessions.id, sessionId)).returning();
   if (!row) throw new Error("Sesi tidak ditemukan");
   return toRecord(row).state;
 }
 
-export async function verifyCreatorPassword(password: string): Promise<boolean> {
+export async function resetSessionPin(sessionId: string): Promise<string> {
+  const pin = generatePin();
+  const pinHash = await hash(pin, { type: argon2id });
   const [row] = await getDb()
-    .select({ value: appSettings.value })
-    .from(appSettings)
-    .where(eq(appSettings.key, "creator_password_hash"))
-    .limit(1);
-  const stored = typeof row?.value === "string" ? row.value : getEnv().CREATOR_PASSWORD_HASH;
-  try {
-    return await verify(stored, password);
-  } catch {
-    return false;
-  }
+    .update(sessions)
+    .set({ pinHash, adminEpoch: sql`${sessions.adminEpoch} + 1` })
+    .where(eq(sessions.id, sessionId))
+    .returning({ id: sessions.id });
+  if (!row) throw new Error("Sesi tidak ditemukan");
+  return pin;
 }

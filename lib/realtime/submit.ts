@@ -25,6 +25,7 @@ export async function handleSubmit(io: RealtimeServer, socket: RealtimeSocket, p
 
   const session = await findSessionById(socket.data.session.id);
   if (!session) return { status: "rejected", reason: "invalid" };
+  if (session.state.ended) return { status: "rejected", reason: "ended" };
   if (session.state.paused) return { status: "rejected", reason: "paused" };
 
   const checked = checkWord(parsed.data.text, session.settings.maxChars);

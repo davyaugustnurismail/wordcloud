@@ -22,12 +22,12 @@ export const approvePayloadSchema = z.object({ ids: z.array(entryId).min(1).max(
 export const entryIdPayloadSchema = z.object({ id: entryId });
 export const editPayloadSchema = z.object({ id: entryId, text: z.string().max(200) });
 export const moderationPayloadSchema = z.object({ mode: z.enum(["langsung", "approve"]) });
-export const controlActions = ["pause", "resume", "freeze", "unfreeze", "clear"] as const;
+export const controlActions = ["pause", "resume", "freeze", "unfreeze", "clear", "end"] as const;
 export const controlPayloadSchema = z.object({ action: z.enum(controlActions) });
 
 export type ControlAction = (typeof controlActions)[number];
 
-export type RejectReason = "invalid" | "space" | "blocked" | "rate_limited" | "paused" | "error";
+export type RejectReason = "invalid" | "space" | "blocked" | "rate_limited" | "paused" | "ended" | "error";
 export type SubmitAck = { status: "shown" | "pending"; id: string } | { status: "rejected"; reason: RejectReason };
 
 export type AdminReason = "forbidden" | "invalid" | "not_found" | "conflict" | "blocked" | "error";
@@ -49,6 +49,7 @@ export type AdminEntryDto = {
 export type SessionState = {
   paused: boolean;
   frozen: boolean;
+  ended: boolean;
   clearedAt: number | null;
 };
 

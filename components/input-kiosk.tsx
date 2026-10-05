@@ -12,7 +12,7 @@ type Props = {
   initialSettings: SessionSettings;
 };
 
-type InputError = "space" | "blocked" | "rate_limited" | "paused" | "error";
+type InputError = "space" | "blocked" | "rate_limited" | "paused" | "ended" | "error";
 type SentKind = "shown" | "pending";
 
 const SENT_VISIBLE_MS = 1800;
@@ -23,6 +23,7 @@ const errorMessages: Record<InputError, string> = {
   blocked: "Coba kata lain ya",
   rate_limited: "Pelan-pelan ya, coba lagi sebentar",
   paused: "Input sedang dijeda, tunggu sebentar.",
+  ended: "Sesi sudah berakhir. Terima kasih sudah ikut!",
   error: "Gagal terkirim, coba lagi",
 };
 
@@ -38,6 +39,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
   const [error, setError] = useState<InputError | null>(null);
   const [sent, setSent] = useState<SentKind | null>(null);
   const [paused, setPaused] = useState(false);
+  const [ended, setEnded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const socketRef = useRef<RealtimeClient | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -53,9 +55,13 @@ export function InputKiosk({ code, initialSettings }: Props) {
     socket.on("snapshot", (snapshot) => {
       setSettings(snapshot.settings);
       setPaused(snapshot.state.paused);
+      setEnded(snapshot.state.ended);
     });
     socket.on("settings:update", setSettings);
-    socket.on("session:state", (state) => setPaused(state.paused));
+    socket.on("session:state", (state) => {
+      setPaused(state.paused);
+      setEnded(state.ended);
+    });
 
     return () => {
       clearTimeout(sentTimerRef.current);
@@ -66,7 +72,8 @@ export function InputKiosk({ code, initialSettings }: Props) {
 
   const theme = inputThemeTokens[settings.inputTheme];
   const trimmed = value.trim();
-  const disabled = !connected || paused || submitting || !trimmed || error === "space";
+  const blocked = paused || ended;
+  const disabled = !connected || blocked || submitting || !trimmed || error === "space";
 
   const onChange = (raw: string) => {
     const next = stripWord(raw, settings.maxChars);
@@ -78,7 +85,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const socket = socketRef.current;
-    if (!socket || !connected || paused || submitting) return;
+    if (!socket || !connected || blocked || submitting) return;
 
     const checked = checkWord(value, settings.maxChars);
     if (!checked.ok) {
@@ -111,8 +118,8 @@ export function InputKiosk({ code, initialSettings }: Props) {
   };
 
   const statusStyle = connected ? theme.status : theme.offline;
-  const showError = connected && (error !== null || paused);
-  const activeError: InputError | null = paused ? "paused" : error;
+  const showError = connected && (error !== null || blocked);
+  const activeError: InputError | null = ended ? "ended" : paused ? "paused" : error;
   const message = !connected
     ? "Kata tidak hilang, tunggu sebentar."
     : activeError
@@ -122,7 +129,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
 
   const fieldStyle = {
     background: theme.field.background,
-    borderColor: showError && !paused ? theme.error.ring : theme.field.border,
+    borderColor: showError && !blocked ? theme.error.ring : theme.field.border,
     color: theme.field.text,
     "--focus-shadow": theme.field.focusShadow,
   } as CSSProperties;

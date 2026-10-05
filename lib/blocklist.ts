@@ -47,3 +47,33 @@ export async function removeSessionTerm(sessionId: string, term: string): Promis
     .returning({ id: blockedTerms.id });
   return rows.length > 0;
 }
+
+function scopeFilter(sessionId: string | null) {
+  return sessionId === null ? isNull(blockedTerms.sessionId) : eq(blockedTerms.sessionId, sessionId);
+}
+
+export async function listTerms(sessionId: string | null): Promise<string[]> {
+  const rows = await getDb()
+    .select({ term: blockedTerms.term })
+    .from(blockedTerms)
+    .where(scopeFilter(sessionId))
+    .orderBy(asc(blockedTerms.createdAt), asc(blockedTerms.term));
+  return rows.map((row) => row.term);
+}
+
+export async function addTerm(sessionId: string | null, term: string): Promise<boolean> {
+  const rows = await getDb()
+    .insert(blockedTerms)
+    .values({ term, sessionId })
+    .onConflictDoNothing()
+    .returning({ id: blockedTerms.id });
+  return rows.length > 0;
+}
+
+export async function removeTerm(sessionId: string | null, term: string): Promise<boolean> {
+  const rows = await getDb()
+    .delete(blockedTerms)
+    .where(and(scopeFilter(sessionId), eq(blockedTerms.term, term)))
+    .returning({ id: blockedTerms.id });
+  return rows.length > 0;
+}

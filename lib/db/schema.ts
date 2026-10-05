@@ -1,6 +1,7 @@
 import {
   boolean,
   index,
+  integer,
   jsonb,
   pgEnum,
   pgTable,
@@ -28,6 +29,7 @@ export const sessions = pgTable("sessions", {
   paused: boolean("paused").notNull().default(false),
   frozen: boolean("frozen").notNull().default(false),
   clearedAt: timestamp("cleared_at", { withTimezone: true }),
+  adminEpoch: integer("admin_epoch").notNull().default(0),
   createdAt: createdAt(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
 });

@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+function decodeHash(value: string): string {
+  return value.startsWith("b64:") ? Buffer.from(value.slice(4), "base64").toString("utf8") : value;
+}
+
 const schema = z.object({
   NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
   HOST: z.string().min(1).default("0.0.0.0"),
@@ -7,8 +11,8 @@ const schema = z.object({
   DATABASE_URL: z.string().min(1),
   REDIS_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET minimal 32 karakter"),
-  ADMIN_PASSWORD_HASH: z.string().min(1),
-  CREATOR_PASSWORD_HASH: z.string().min(1),
+  ADMIN_PASSWORD_HASH: z.string().min(1).transform(decodeHash),
+  CREATOR_PASSWORD_HASH: z.string().min(1).transform(decodeHash),
   PUBLIC_URL: z.url().default("http://localhost:3000"),
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
   ALLOW_LAN_ORIGINS: z.enum(["true", "false"]).optional(),

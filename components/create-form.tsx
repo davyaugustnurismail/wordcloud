@@ -10,6 +10,7 @@ import {
   type InputTheme,
   type ModerationMode,
   type PhotowallTheme,
+  type SessionDefaults,
 } from "@/lib/settings";
 import { BackgroundPicker } from "./background-picker";
 import { AlertCircleIcon, ArrowRightIcon, CheckIcon, ChevronLeftIcon, LockIcon, SpinnerIcon } from "./icons";
@@ -101,13 +102,13 @@ function backgroundUrl(background: Background): string | null {
   return background.type === "library" ? assetUrl(background.id) : background.url;
 }
 
-export function CreateForm({ library }: { library: Library }) {
+export function CreateForm({ library, defaults }: { library: Library; defaults: SessionDefaults }) {
   const router = useRouter();
   const [name, setName] = useState("");
   const [password, setPassword] = useState("");
-  const [moderation, setModeration] = useState<ModerationMode>("langsung");
-  const [photowallTheme, setPhotowallTheme] = useState<PhotowallTheme>("hitam");
-  const [inputTheme, setInputTheme] = useState<InputTheme>("reggae");
+  const [moderation, setModeration] = useState<ModerationMode>(defaults.moderationMode);
+  const [photowallTheme, setPhotowallTheme] = useState<PhotowallTheme>(defaults.photowallTheme);
+  const [inputTheme, setInputTheme] = useState<InputTheme>(defaults.inputTheme);
   const [photowallBg, setPhotowallBg] = useState<Background>(
     library.photowall[0] ? { type: "library", id: library.photowall[0] } : null,
   );
@@ -117,7 +118,7 @@ export function CreateForm({ library }: { library: Library }) {
   const [photowallBgError, setPhotowallBgError] = useState<string | null>(null);
   const [inputBgError, setInputBgError] = useState<string | null>(null);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
-  const [maxChars, setMaxChars] = useState("20");
+  const [maxChars, setMaxChars] = useState(String(defaults.maxChars));
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);

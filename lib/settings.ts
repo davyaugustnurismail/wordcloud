@@ -60,6 +60,17 @@ export const sessionSettingsSchema = z.object({
 
 export type SessionSettings = z.infer<typeof sessionSettingsSchema>;
 
+export const sessionDefaultsSchema = sessionSettingsSchema.pick({
+  photowallTheme: true,
+  inputTheme: true,
+  moderationMode: true,
+  k: true,
+  maxChars: true,
+  safePct: true,
+});
+
+export type SessionDefaults = z.infer<typeof sessionDefaultsSchema>;
+
 export const settingsPatchSchema = z
   .object({
     photowallTheme: fields.photowallTheme.optional(),

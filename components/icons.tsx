@@ -231,6 +231,32 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+export function BarsIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M5 20V10M12 20V4M19 20v-7" />
+    </Base>
+  );
+}
+
+export function ImageIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <rect x="3" y="5" width="18" height="14" rx="2" />
+      <circle cx="9" cy="10" r="1.5" />
+      <path d="M21 16l-5-5-8 8" />
+    </Base>
+  );
+}
+
+export function DownloadIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 4v11M7 10l5 5 5-5M5 20h14" />
+    </Base>
+  );
+}
+
 export function SlidersIcon(props: IconProps) {
   return (
     <Base {...props}>

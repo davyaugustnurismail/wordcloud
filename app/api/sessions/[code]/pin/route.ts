@@ -33,6 +33,6 @@ export async function POST(request: Request, context: { params: Promise<{ code: 
   }
 
   const response = NextResponse.json({ ok: true, code: session.code });
-  response.cookies.set(adminCookieName(session.code), await sealAdminToken(session.code), adminCookieOptions());
+  response.cookies.set(adminCookieName(session.code), await sealAdminToken(session.code, session.adminEpoch), adminCookieOptions());
   return response;
 }

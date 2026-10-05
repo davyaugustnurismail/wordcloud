@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { assetUrl, type CaseStyle, type PhotowallFont, type SessionSettings } from "@/lib/settings";
+import { assetUrl, type PhotowallFont, type SessionSettings } from "@/lib/settings";
 import { cssFontFamily, fontSpecs } from "@/lib/wordcloud/fonts";
 import { computeLayout, type PlacedWord } from "@/lib/wordcloud/layout";
 import { loadWordFont, measureInk } from "@/lib/wordcloud/measure";
 import { paletteFor, photowallBackgrounds, pickWordColor } from "@/lib/wordcloud/palette";
+import { applyCase } from "@/lib/wordcloud/text";
 
 export type StageEntry = { id: string; text: string };
 
@@ -37,12 +38,6 @@ type Pose = { x: number; y: number; fs: number };
 const MOVE_MS = 700;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const MIN_MOVE_PX = 0.5;
-
-function applyCase(text: string, style: CaseStyle): string {
-  if (style === "kapital") return text.toUpperCase();
-  if (style === "kecil") return text.toLowerCase();
-  return text;
-}
 
 export function WordcloudStage({ entries, settings, frozen = false, animate = true, className = "" }: Props) {
   const { photowallFont: font, caseStyle, k, minRatio, maxPct, safePct, maxWords } = settings;

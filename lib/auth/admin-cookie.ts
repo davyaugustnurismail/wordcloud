@@ -8,19 +8,19 @@ export function adminCookieName(code: string): string {
 
 export const adminCookieOptions = authCookieOptions;
 
-export async function sealAdminToken(code: string): Promise<string> {
-  return new SignJWT({ code, scope: "session-admin" })
+export async function sealAdminToken(code: string, epoch: number): Promise<string> {
+  return new SignJWT({ code, epoch, scope: "session-admin" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${AUTH_COOKIE_MAX_AGE_SEC}s`)
     .sign(secretKey());
 }
 
-export async function verifyAdminToken(token: string | undefined, code: string): Promise<boolean> {
+export async function verifyAdminToken(token: string | undefined, code: string, epoch: number): Promise<boolean> {
   if (!token) return false;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    return payload.code === code && payload.scope === "session-admin";
+    return payload.code === code && payload.epoch === epoch && payload.scope === "session-admin";
   } catch {
     return false;
   }

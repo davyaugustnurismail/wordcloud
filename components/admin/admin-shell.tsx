@@ -21,6 +21,7 @@ import { useAdmin } from "./admin-provider";
 function useStatus() {
   const { connected, state } = useAdmin();
   if (!connected) return { label: "TERPUTUS", tone: "bg-danger/15 text-danger", dot: "bg-danger" };
+  if (state.ended) return { label: "SELESAI", tone: "bg-fg/10 text-muted", dot: "bg-muted" };
   if (state.frozen) return { label: "DIBEKUKAN", tone: "bg-info/15 text-info", dot: "bg-info" };
   if (state.paused) return { label: "INPUT DIJEDA", tone: "bg-warn/15 text-warn", dot: "bg-warn" };
   return { label: "LIVE", tone: "bg-live/15 text-live", dot: "bg-live" };
@@ -86,18 +87,20 @@ function Tabs() {
     { href: base, label: "Live & moderasi" },
     { href: `${base}/tema`, label: "Tema & tampilan" },
     { href: `${base}/blocklist`, label: "Blocklist" },
+    { href: `${base}/dashboard`, label: "Dashboard" },
+    { href: `${base}/dashboard#unduh`, label: "Hasil & unduh" },
   ];
 
   return (
-    <nav aria-label="Menu admin sesi" className="hidden gap-1 border-b border-line px-7 md:flex">
+    <nav aria-label="Menu admin sesi" className="flex gap-1 overflow-x-auto border-b border-line px-3 md:px-7">
       {tabs.map((tab) => {
-        const active = pathname === tab.href;
+        const active = pathname === tab.href.split("#")[0] && !tab.href.includes("#");
         return (
           <Link
             key={tab.href}
             href={tab.href}
             aria-current={active ? "page" : undefined}
-            className={`flex h-[50px] items-center border-b-[3px] px-3.5 text-[15px] ${
+            className={`flex h-[50px] shrink-0 items-center whitespace-nowrap border-b-[3px] px-3.5 text-[15px] ${
               active ? "border-primary font-extrabold text-fg" : "border-transparent font-semibold text-muted"
             }`}
           >

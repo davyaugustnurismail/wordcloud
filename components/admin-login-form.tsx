@@ -77,6 +77,9 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
               <span>Sesi admin aktif 24 jam di device ini.</span>
             </li>
           </ul>
+          <Link href="/admin/login" className="self-start text-[15px] font-bold text-fg underline underline-offset-[3px]">
+            Masuk sebagai admin global
+          </Link>
         </div>
 
         <div className="flex w-full min-w-0 max-w-[520px] flex-[1_1_420px] flex-col gap-5 md:rounded-3xl md:border md:border-line md:bg-surface md:p-8">

@@ -4,7 +4,8 @@ import { isAssetUsable } from "@/lib/assets";
 import { readyCookieName, readyCookieOptions, sealReadyToken } from "@/lib/auth/ready-cookie";
 import { clientIp } from "@/lib/http";
 import { hitRateLimit } from "@/lib/rate-limit";
-import { createSession, updateSessionSettings, verifyCreatorPassword } from "@/lib/sessions";
+import { getSessionDefaults, verifyCreatorPassword } from "@/lib/app-settings";
+import { createSession, updateSessionSettings } from "@/lib/sessions";
 import { defaultSettings, inputThemes, moderationModes, photowallThemes } from "@/lib/settings";
 import { isUploadedFile, prepareImage, storeImage, UploadError } from "@/lib/uploads";
 
@@ -59,6 +60,7 @@ export async function POST(request: Request) {
 
   const settings = {
     ...defaultSettings(),
+    ...(await getSessionDefaults()),
     moderationMode: rest.moderationMode,
     photowallTheme: rest.photowallTheme,
     inputTheme: rest.inputTheme,

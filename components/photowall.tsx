@@ -13,7 +13,7 @@ type Props = {
 
 const MAX_ENTRIES = 1000;
 
-const IDLE_STATE: SessionState = { paused: false, frozen: false, clearedAt: null };
+const IDLE_STATE: SessionState = { paused: false, frozen: false, ended: false, clearedAt: null };
 
 function insertEntry(list: EntryDto[], entry: EntryDto): EntryDto[] {
   const without = list.filter((existing) => existing.id !== entry.id);

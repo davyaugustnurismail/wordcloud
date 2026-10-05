@@ -7,4 +7,4 @@ if (!password) {
 }
 
 const hashed = await hash(password, { type: argon2id });
-console.log(`'${hashed}'`);
+console.log(`b64:${Buffer.from(hashed, "utf8").toString("base64")}`);

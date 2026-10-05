@@ -62,3 +62,19 @@ export async function storeImage(buffer: Buffer, target: { sessionId: string; ki
   await writeFile(absolutePath, buffer);
   return createAsset({ sessionId: target.sessionId, kind: target.kind, path: relativePath });
 }
+
+function slugify(name: string): string {
+  const base = name.replace(/\.[^.]+$/, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
+  return base.slice(0, 40) || "gambar";
+}
+
+export async function storeLibraryImage(buffer: Buffer, originalName: string): Promise<AssetRecord[]> {
+  const relativePath = path.posix.join("library", `${slugify(originalName)}-${randomUUID().slice(0, 8)}.jpg`);
+  const absolutePath = resolveAssetPath(relativePath);
+  if (!absolutePath) throw new Error("Path upload tidak valid");
+  await mkdir(path.dirname(absolutePath), { recursive: true });
+  await writeFile(absolutePath, buffer);
+  const photowall = await createAsset({ sessionId: null, kind: "photowall_bg", path: relativePath });
+  const input = await createAsset({ sessionId: null, kind: "input_bg", path: relativePath });
+  return [photowall, input];
+}
