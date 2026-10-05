@@ -127,7 +127,7 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
             <div className="flex flex-col gap-1">
               <h2 className="m-0 text-lg font-extrabold">Akses admin sesi</h2>
               <p className="m-0 text-sm leading-normal text-muted">
-                Catat untuk operator. Device tanpa kamera cukup ketik kode dan PIN di Masuk admin.
+                Catat untuk operator. Device tanpa kamera cukup ketik kode dan PIN di Masuk sebagai admin sesi.
               </p>
             </div>
             <div className="flex flex-col gap-3">

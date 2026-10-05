@@ -41,7 +41,7 @@ export default function LandingPage() {
         <div className="flex items-center justify-center gap-2 text-[15px] text-muted">
           <LockIcon size={16} />
           <Link href="/masuk-admin" className="font-bold text-fg underline underline-offset-[3px]">
-            Masuk admin
+            Masuk sebagai admin sesi
           </Link>
         </div>
       </div>
