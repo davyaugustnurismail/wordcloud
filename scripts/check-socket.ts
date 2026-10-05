@@ -1,30 +1,36 @@
 import { io } from "socket.io-client";
 
-const args = process.argv.slice(2);
-const originFlag = args.indexOf("--origin");
-const origin = originFlag >= 0 ? args[originFlag + 1] : undefined;
+function flag(name: string): string | undefined {
+  const index = process.argv.indexOf(`--${name}`);
+  return index >= 0 ? process.argv[index + 1] : undefined;
+}
+
+const flagValues = new Set(["origin", "code", "role"].map(flag));
 const url =
-  args.find((arg, i) => !arg.startsWith("--") && (originFlag < 0 || i !== originFlag + 1)) ?? "http://localhost:3000";
+  process.argv.slice(2).find((arg) => !arg.startsWith("--") && !flagValues.has(arg)) ?? "http://localhost:3000";
+const origin = flag("origin");
+const code = flag("code") ?? "KATA23";
+const role = flag("role") ?? "display";
+const label = `${url} (kode ${code}, peran ${role}${origin ? `, Origin ${origin}` : ""})`;
 
 const socket = io(url, {
   transports: ["websocket"],
   reconnection: false,
   timeout: 5000,
+  auth: { code, role },
   extraHeaders: origin ? { Origin: origin } : undefined,
 });
 
-const fail = (message: string) => {
-  console.error(`GAGAL ${url}${origin ? ` (Origin: ${origin})` : ""}: ${message}`);
-  process.exit(1);
-};
+const startedAt = performance.now();
 
-socket.on("connect_error", (err) => fail(err.message));
-socket.on("connect", () => {
-  const sentAt = performance.now();
-  socket.emit("ping:check", () => {
-    const rtt = Math.round(performance.now() - sentAt);
-    console.log(`OK ${url}${origin ? ` (Origin: ${origin})` : ""}: websocket terhubung, ack ${rtt} ms`);
-    socket.disconnect();
-    process.exit(0);
-  });
+socket.on("connect_error", (err) => {
+  console.error(`GAGAL ${label}: ${err.message}`);
+  process.exit(1);
+});
+
+socket.on("snapshot", (snapshot: { entries: unknown[] }) => {
+  const elapsed = Math.round(performance.now() - startedAt);
+  console.log(`OK ${label}: snapshot diterima (${snapshot.entries.length} kata) dalam ${elapsed} ms`);
+  socket.disconnect();
+  process.exit(0);
 });

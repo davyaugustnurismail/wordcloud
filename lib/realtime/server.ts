@@ -1,12 +1,18 @@
 import type { Server as HttpServer } from "node:http";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { Server } from "socket.io";
+import { parseCookieHeader } from "../auth/cookies";
+import { openReadyToken, readyCookieName } from "../auth/ready-cookie";
+import { isValidCode, normalizeCode } from "../code";
 import { getEnv } from "../env";
 import { getRedis } from "../redis";
-import type { ClientToServerEvents, ServerToClientEvents } from "./events";
+import { findSessionByCode } from "../sessions";
+import { handshakeAuthSchema } from "./events";
+import { onConnection } from "./handlers";
 import { isOriginAllowed } from "./origin";
+import type { RealtimeServer } from "./types";
 
-export type RealtimeServer = Server<ClientToServerEvents, ServerToClientEvents>;
+export type { RealtimeServer } from "./types";
 
 const KEY = Symbol.for("wordcloud.io");
 type Holder = typeof globalThis & { [KEY]?: RealtimeServer };
@@ -35,10 +41,38 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
   sub.on("error", (err) => console.error(`[redis:sub] ${err.message}`));
   io.adapter(createAdapter(pub, sub));
 
+  io.use(async (socket, next) => {
+    try {
+      const parsed = handshakeAuthSchema.safeParse(socket.handshake.auth);
+      if (!parsed.success) return next(new Error("invalid_auth"));
+
+      const code = normalizeCode(parsed.data.code);
+      const session = isValidCode(code) ? await findSessionByCode(code) : null;
+      if (!session) return next(new Error("session_not_found"));
+
+      if (parsed.data.role === "ready") {
+        const cookies = parseCookieHeader(socket.handshake.headers.cookie);
+        const opened = await openReadyToken(cookies[readyCookieName(code)], code);
+        if (!opened) return next(new Error("unauthorized"));
+      }
+
+      socket.data = {
+        session,
+        role: parsed.data.role,
+        deviceId: parsed.data.deviceId ?? null,
+        ip: socket.handshake.address,
+      };
+      next();
+    } catch (err) {
+      console.error(`[handshake] ${(err as Error).message}`);
+      next(new Error("server_error"));
+    }
+  });
+
   io.on("connection", (socket) => {
-    socket.emit("server:ready", { at: Date.now() });
-    socket.on("ping:check", (ack) => {
-      if (typeof ack === "function") ack({ ok: true, at: Date.now() });
+    onConnection(io, socket).catch((err: Error) => {
+      console.error(`[connection] ${err.message}`);
+      socket.disconnect(true);
     });
   });
 

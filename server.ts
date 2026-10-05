@@ -2,6 +2,7 @@ import "./lib/load-env";
 import { createServer } from "node:http";
 import next from "next";
 import { getEnv } from "./lib/env";
+import { CLIENT_IP_HEADER } from "./lib/http";
 import { attachRealtime } from "./lib/realtime/server";
 
 async function main() {
@@ -9,6 +10,7 @@ async function main() {
   const dev = env.NODE_ENV !== "production";
 
   const httpServer = createServer((req, res) => {
+    req.headers[CLIENT_IP_HEADER] = req.socket.remoteAddress ?? "unknown";
     void handle(req, res);
   });
   const app = next({ dev, hostname: env.HOST, port: env.PORT, httpServer });

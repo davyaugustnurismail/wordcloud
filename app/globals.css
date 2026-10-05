@@ -14,6 +14,7 @@
   --hl: #ffe14d;
   --on-hl: #111111;
   --field: #0f0f12;
+  --sel-bg: rgba(255, 225, 77, 0.08);
   --ring: #ffe14d;
   --live: #3ddc84;
   --warn: #ffb25c;
@@ -35,6 +36,7 @@
   --hl: #ffd400;
   --on-hl: #141416;
   --field: #ffffff;
+  --sel-bg: #fff8cc;
   --ring: #141416;
   --live: #157a3a;
   --warn: #a84b00;
@@ -55,6 +57,7 @@
   --color-hl: var(--hl);
   --color-on-hl: var(--on-hl);
   --color-field: var(--field);
+  --color-sel-bg: var(--sel-bg);
   --color-ring: var(--ring);
   --color-live: var(--live);
   --color-warn: var(--warn);

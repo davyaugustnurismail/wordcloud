@@ -15,9 +15,19 @@ export const viewport: Viewport = {
   initialScale: 1,
 };
 
+const themeScript = `try{var t=localStorage.getItem("wc-theme");if(t==="light"||t==="dark"){document.documentElement.dataset.theme=t}}catch(e){}`;
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id" data-theme="dark" suppressHydrationWarning className={`${baloo.variable} ${jakarta.variable} ${jetbrains.variable}`}>
+    <html
+      lang="id"
+      data-theme="dark"
+      suppressHydrationWarning
+      className={`${baloo.variable} ${jakarta.variable} ${jetbrains.variable}`}
+    >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
+      </head>
       <body className="min-h-dvh antialiased">{children}</body>
     </html>
   );
