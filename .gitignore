@@ -10,3 +10,4 @@ data
 *.tsbuildinfo
 next-env.d.ts
 .claude/settings.local.json
+wordcloud-photowall-starter/
