@@ -1,0 +1,40 @@
+import { z } from "zod";
+
+const schema = z.object({
+  NODE_ENV: z.enum(["development", "production", "test"]).default("development"),
+  HOST: z.string().min(1).default("0.0.0.0"),
+  PORT: z.coerce.number().int().positive().default(3000),
+  DATABASE_URL: z.string().min(1),
+  REDIS_URL: z.string().min(1),
+  AUTH_SECRET: z.string().min(32, "AUTH_SECRET minimal 32 karakter"),
+  ADMIN_PASSWORD_HASH: z.string().min(1),
+  CREATOR_PASSWORD_HASH: z.string().min(1),
+  PUBLIC_URL: z.url().default("http://localhost:3000"),
+  UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
+  ALLOW_LAN_ORIGINS: z.enum(["true", "false"]).optional(),
+});
+
+export type Env = Omit<z.infer<typeof schema>, "ALLOW_LAN_ORIGINS"> & {
+  ALLOW_LAN_ORIGINS: boolean;
+};
+
+let cached: Env | undefined;
+
+export function getEnv(): Env {
+  if (cached) return cached;
+
+  const parsed = schema.safeParse(process.env);
+  if (!parsed.success) {
+    const detail = parsed.error.issues
+      .map((issue) => `  - ${issue.path.join(".") || "(env)"}: ${issue.message}`)
+      .join("\n");
+    throw new Error(`Environment tidak valid. Salin .env.example ke .env lalu isi:\n${detail}`);
+  }
+
+  const { ALLOW_LAN_ORIGINS, ...rest } = parsed.data;
+  cached = {
+    ...rest,
+    ALLOW_LAN_ORIGINS: ALLOW_LAN_ORIGINS ? ALLOW_LAN_ORIGINS === "true" : rest.NODE_ENV !== "production",
+  };
+  return cached;
+}

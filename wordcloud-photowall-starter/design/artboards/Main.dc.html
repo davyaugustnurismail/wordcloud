@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Photowall</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="position: relative; overflow: hidden; width: {{w}}px; height: {{h}}px; background: {{bg}}; font-family: 'Baloo 2', 'Trebuchet MS', sans-serif; color: #FFFFFF; cursor: none">
+<sc-if value="{{isFoto}}" hint-placeholder-val="{{false}}">
+<sc-if value="{{isPanggung}}" hint-placeholder-val="{{true}}">
+<img src="/_blob/5ecb1f4d54e631b8964854fd742735d6" alt="" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover">
+</sc-if>
+<sc-if value="{{isReggaePhoto}}" hint-placeholder-val="{{false}}">
+<img src="/_blob/7fed3d48614b931056ad9371dc37514f" alt="" style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; object-fit: cover">
+</sc-if>
+<div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, {{overlayA}})"></div>
+</sc-if>
+<sc-for list="{{words}}" as="wd" hint-placeholder-count="0">
+<div style="position: absolute; left: {{wd.x}}px; top: {{wd.y}}px; font-size: {{wd.fs}}px; line-height: {{wd.lh}}px; height: {{wd.lh}}px; font-weight: 800; white-space: nowrap; color: {{wd.color}}; text-shadow: {{wd.shadow}}">{{wd.t}}</div>
+</sc-for>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"theme":{"editor":"enum","options":["hitam","putih","foto"],"default":"hitam","section":"Tema"},"photo":{"editor":"enum","options":["panggung","reggae"],"default":"panggung","section":"Tema"},"overlay":{"editor":"range","min":0,"max":85,"step":5,"unit":"%","default":45,"section":"Tema"},"count":{"editor":"range","min":1,"max":300,"step":1,"default":160,"section":"Wordcloud"},"k":{"editor":"range","min":3,"max":24,"step":1,"default":8,"section":"Wordcloud"},"maxPct":{"editor":"range","min":15,"max":45,"step":1,"unit":"%","default":34,"section":"Wordcloud"},"minRatio":{"editor":"range","min":0.1,"max":0.5,"step":0.02,"default":0.2,"section":"Wordcloud"},"safe":{"editor":"range","min":0,"max":12,"step":1,"unit":"%","default":2,"section":"Wordcloud"},"caseStyle":{"editor":"enum","options":["kecil","asli","kapital"],"default":"kecil","section":"Wordcloud"},"latest":{"editor":"text","default":"bahagia","section":"Demo"},"seed":{"editor":"int","default":7,"section":"Demo"},"w":{"editor":null,"default":1280},"h":{"editor":null,"default":720},"$preview":{"width":1280,"height":720}}'>
+class Component extends DCLogic {
+  componentDidMount() {
+    var self = this;
+    try {
+      if (document.fonts && document.fonts.load) {
+        document.fonts.load('800 100px "Baloo 2"').then(function () {
+          self._mc = {};
+          self._key = null;
+          self.forceUpdate();
+        }, function () {});
+      }
+    } catch (e) {}
+  }
+
+  num(v, d) {
+    var n = parseFloat(v);
+    return isFinite(n) ? n : d;
+  }
+
+  rng(seed) {
+    var a = (seed >>> 0) || 1;
+    return function () {
+      a = (a + 0x6D2B79F5) | 0;
+      var t = Math.imul(a ^ (a >>> 15), 1 | a);
+      t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+      return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+    };
+  }
+
+  pool() {
+    return {
+      hot: ['bahagia', 'seru', 'irie', 'one-love', 'santai', 'damai', 'merdeka'],
+      all: ['bahagia', 'seru', 'irie', 'one-love', 'rindu', 'merdeka', 'santai', 'gokil', 'cinta', 'damai', 'semangat', 'bebas', 'hangat', 'pecah', 'asik', 'syukur', 'kompak', 'keren', 'nyaman', 'ceria', 'bangga', 'bersama', 'positif', 'vibes', 'harmoni', 'cerah', 'kawan', 'nikmat', 'riang', 'lepas', 'tenang', 'mantap', 'juara', 'sahabat', 'takjub', 'terharu', 'girang', 'sejuk', 'merinding', 'puas', 'gembira', 'adem', 'rasta', 'jamming', 'goyang', 'respect', 'groove', 'senyum', 'peace', 'cahaya', 'malam', 'berani', 'tulus', 'plong', 'hepi', 'menyala', 'luar-biasa', 'meriah', 'syahdu', 'santuy', 'hore', 'reggae', 'priangan', 'manis', 'lega', 'haru', 'wow', 'mesra', 'ramai', 'bersinar', 'legenda', 'nostalgia', 'kangen', 'healing', 'cuan', 'sabar', 'ikhlas', 'mantul', 'joss', 'asyik']
+    };
+  }
+
+  palette(theme) {
+    if (theme === 'putih') return ['#0B2E8A', '#B0125B', '#0A6B4C', '#B93D08', '#5A22B0', '#141416'];
+    if (theme === 'foto') return ['#FFFFFF', '#FFE14D', '#8BE9FF', '#FF8CCB', '#9DFFBF'];
+    return ['#FFE14D', '#3DE0FF', '#FF4FAE', '#59F59A', '#FF9F45', '#B79CFF', '#FFFFFF'];
+  }
+
+  measure(text) {
+    this._mc = this._mc || {};
+    var hit = this._mc[text];
+    if (hit) return hit;
+    if (!this._ctx) {
+      var cv = document.createElement('canvas');
+      this._ctx = cv.getContext('2d');
+    }
+    var ctx = this._ctx;
+    ctx.font = '800 100px "Baloo 2", "Trebuchet MS", sans-serif';
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'alphabetic';
+    var m = ctx.measureText(text);
+    var r = {
+      l: m.actualBoundingBoxLeft != null ? m.actualBoundingBoxLeft : 0,
+      r: m.actualBoundingBoxRight != null ? m.actualBoundingBoxRight : m.width,
+      a: m.actualBoundingBoxAscent != null ? m.actualBoundingBoxAscent : 72,
+      d: m.actualBoundingBoxDescent != null ? m.actualBoundingBoxDescent : 18,
+      fa: m.fontBoundingBoxAscent || 110,
+      fd: m.fontBoundingBoxDescent || 52
+    };
+    this._mc[text] = r;
+    return r;
+  }
+
+  texts(n, latest, seed, caseStyle) {
+    var R = this.rng(seed * 7919 + 13);
+    var P = this.pool();
+    var out = [];
+    for (var i = 0; i < n; i++) {
+      var t;
+      if (i === 0) t = latest;
+      else if (R() < 0.24) t = P.hot[Math.floor(R() * P.hot.length)];
+      else t = P.all[Math.floor(R() * P.all.length)];
+      if (caseStyle === 'kapital') t = t.toUpperCase();
+      else if (caseStyle === 'kecil') t = t.toLowerCase();
+      else if (i % 3 === 1) t = t.charAt(0).toUpperCase() + t.slice(1);
+      out.push(t);
+    }
+    return out;
+  }
+
+  free(grid, GW, cs, x, y, w, h) {
+    var x0 = Math.floor(x / cs), y0 = Math.floor(y / cs);
+    var x1 = Math.ceil((x + w) / cs), y1 = Math.ceil((y + h) / cs);
+    var mid = (y0 + y1) >> 1;
+    var row, xx, yy;
+    row = mid * GW;
+    for (xx = x0; xx < x1; xx++) if (grid[row + xx]) return false;
+    for (yy = y0; yy < y1; yy++) {
+      row = yy * GW;
+      if (grid[row + x0] || grid[row + x1 - 1]) return false;
+    }
+    for (yy = y0; yy < y1; yy++) {
+      row = yy * GW;
+      for (xx = x0; xx < x1; xx++) if (grid[row + xx]) return false;
+    }
+    return true;
+  }
+
+  mark(grid, GW, cs, x, y, w, h) {
+    var x0 = Math.floor(x / cs), y0 = Math.floor(y / cs);
+    var x1 = Math.ceil((x + w) / cs), y1 = Math.ceil((y + h) / cs);
+    for (var yy = y0; yy < y1; yy++) {
+      var row = yy * GW;
+      for (var xx = x0; xx < x1; xx++) grid[row + xx] = 1;
+    }
+  }
+
+  find(grid, GW, cs, u, bw, bh, cx, cy, box, off) {
+    var e = (box.x1 - box.x0) / (box.y1 - box.y0);
+    var gap = Math.max(2 * u, Math.min(10 * u, bh * 0.45));
+    var step = Math.max(2 * u, Math.min(8 * u, bh * 0.3));
+    var rmax = (box.y1 - box.y0) / 2 + bh;
+    var X = cx - bw / 2, Y = cy - bh / 2;
+    if (X >= box.x0 && Y >= box.y0 && X + bw <= box.x1 && Y + bh <= box.y1 && this.free(grid, GW, cs, X, Y, bw, bh)) return [X, Y];
+    for (var r = gap; r <= rmax; r += gap) {
+      var hx = e * r, hy = r, P = 4 * (hx + hy);
+      var n = Math.max(8, Math.ceil(P / step));
+      for (var k = 0; k < n; k++) {
+        var t = ((k / n + off) % 1) * P, x, y;
+        if (t < 2 * hx) { x = -hx + t; y = -hy; }
+        else if ((t -= 2 * hx) < 2 * hy) { x = hx; y = -hy + t; }
+        else if ((t -= 2 * hy) < 2 * hx) { x = hx - t; y = hy; }
+        else { t -= 2 * hx; x = -hx; y = hy - t; }
+        X = cx + x - bw / 2; Y = cy + y - bh / 2;
+        if (X >= box.x0 && Y >= box.y0 && X + bw <= box.x1 && Y + bh <= box.y1 && this.free(grid, GW, cs, X, Y, bw, bh)) return [X, Y];
+      }
+    }
+    return null;
+  }
+
+  layout(W, H, N, k, minRatio, safePct, latest, seed, caseStyle, maxPct) {
+    var self = this;
+    var texts = this.texts(N, latest, seed, caseStyle);
+    var u = W / 1280;
+    var GW = 560, cs = W / GW, GH = Math.ceil(H / cs) + 2;
+    var grid = new Uint8Array(GW * GH);
+    var mx = W * safePct / 100, my = H * safePct / 100;
+    var box = { x0: mx, y0: my, x1: W - mx, y1: H - my };
+    var cx = W / 2, cy = H / 2;
+    var met = [], g = [], i;
+    for (i = 0; i < N; i++) {
+      met[i] = this.measure(texts[i]);
+      g[i] = minRatio + (1 - minRatio) * Math.exp(-i / k);
+    }
+    var w0 = (met[0].l + met[0].r) / 100;
+    var floor = H * 0.02;
+    var R = this.rng(seed + 101);
+    var offs = [];
+    for (i = 0; i < N; i++) offs.push(R());
+    function attempt(S, allowDrop) {
+      grid.fill(0);
+      var placed = [];
+      for (var j = 0; j < N; j++) {
+        var fs = Math.max(S * g[j], floor);
+        var mt = met[j], sc = fs / 100;
+        var pad = fs * 0.03 + 0.5 * u;
+        var bw = (mt.l + mt.r) * sc + pad * 2, bh = (mt.a + mt.d) * sc + pad * 2;
+        var pos = self.find(grid, GW, cs, u, bw, bh, cx, cy, box, offs[j]);
+        if (!pos) {
+          if (!allowDrop) return null;
+          placed.push(null);
+          continue;
+        }
+        self.mark(grid, GW, cs, pos[0], pos[1], bw, bh);
+        placed.push({ i: j, fs: fs, x: pos[0] + pad + mt.l * sc, y: pos[1] + pad + mt.a * sc - mt.fa * sc, lh: (mt.fa + mt.fd) * sc });
+      }
+      return placed;
+    }
+    var hi = Math.min(H * maxPct / 100, 0.96 * (box.x1 - box.x0) / Math.max(w0, 0.1));
+    var best = attempt(hi, false);
+    if (!best) {
+      var lo = hi * 0.7;
+      var got = attempt(lo, false);
+      while (!got && lo * minRatio * 0.75 >= floor) { hi = lo; lo *= 0.75; got = attempt(lo, false); }
+      if (got) {
+        best = got;
+        for (var it = 0; it < 5; it++) {
+          var mid = (lo + hi) / 2;
+          var r = attempt(mid, false);
+          if (r) { lo = mid; best = r; } else hi = mid;
+        }
+      } else {
+        best = attempt(lo, true);
+      }
+    }
+    return { texts: texts, placed: best };
+  }
+
+  renderVals() {
+    var p = this.props;
+    var theme = p.theme || 'hitam';
+    var W = this.num(p.w, 1280), H = this.num(p.h, 720);
+    var N = Math.max(1, Math.min(300, Math.round(this.num(p.count, 160))));
+    var k = this.num(p.k, 8), minRatio = this.num(p.minRatio, 0.2), safe = this.num(p.safe, 2);
+    var latest = (p.latest || 'bahagia').trim().split(/\s+/)[0] || 'bahagia';
+    var seed = Math.round(this.num(p.seed, 7));
+    var caseStyle = p.caseStyle || 'kecil';
+    var maxPct = Math.max(10, Math.min(50, this.num(p.maxPct, 34)));
+    var key = [W, H, N, k, minRatio, safe, latest, seed, caseStyle, maxPct].join('|');
+    if (this._key !== key || !this._lay) {
+      this._lay = this.layout(W, H, N, k, minRatio, safe, latest, seed, caseStyle, maxPct);
+      this._key = key;
+    }
+    var lay = this._lay;
+    var pal = this.palette(theme);
+    var words = [];
+    for (var j = lay.placed.length - 1; j >= 0; j--) {
+      var pw = lay.placed[j];
+      if (!pw) continue;
+      var id = N - pw.i + seed * 31;
+      var color = pal[((id * 2654435761) >>> 0) % pal.length];
+      var shadow = 'none';
+      words.push({
+        t: lay.texts[pw.i],
+        x: pw.x.toFixed(1),
+        y: pw.y.toFixed(1),
+        fs: pw.fs.toFixed(1),
+        lh: pw.lh.toFixed(1),
+        color: color,
+        shadow: shadow
+      });
+    }
+    return {
+      w: W,
+      h: H,
+      bg: theme === 'putih' ? '#FFFFFF' : '#000000',
+      isFoto: theme === 'foto',
+      isPanggung: (p.photo || 'panggung') !== 'reggae',
+      isReggaePhoto: p.photo === 'reggae',
+      overlayA: (this.num(p.overlay, 45) / 100).toFixed(2),
+      words: words
+    };
+  }
+}
+</script>
+</body>
+</html>

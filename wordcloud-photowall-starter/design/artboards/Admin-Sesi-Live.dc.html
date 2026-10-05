@@ -1,0 +1,377 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Admin sesi — Live & moderasi</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: {{c.bg}}; color: {{c.fg}}; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column">
+<header style="display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; box-sizing: border-box; padding: 14px 32px; border-bottom: 1px solid {{c.line}}">
+<div style="display: flex; align-items: center; gap: 14px; flex-wrap: wrap">
+<span style="font-size: 18px; font-weight: 800">Sesi Photowall</span>
+<span style="display: flex; align-items: center; height: 30px; padding: 0 10px; border-radius: 8px; background: {{c.surface2}}; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 15px; letter-spacing: 0.08em">RGW4TK</span>
+<span style="display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 12px; border-radius: 999px; background: {{statusBg}}; color: {{statusFg}}; font-size: 13px; font-weight: 800; letter-spacing: 0.04em">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: {{statusFg}}"></span>
+{{statusLabel}}
+</span>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<div style="display: flex; align-items: center; gap: 14px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{c.line}}; font-size: 13px; font-weight: 600; color: {{c.muted}}">
+<span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="12" rx="2"></rect><path d="M8 20h8M12 16v4"></path></svg>Photowall <b style="color: {{c.fg}}">1</b></span>
+<span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="2.5" width="14" height="19" rx="2.5"></rect><path d="M10.5 18.5h3"></path></svg>Input <b style="color: {{c.fg}}">2</b></span>
+<span style="display: flex; align-items: center; gap: 6px"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z"></path></svg>Admin <b style="color: {{c.fg}}">1</b></span>
+</div>
+<button type="button" onClick="{{toggleMode}}" aria-label="Ganti ke mode {{modeNext}}" style="display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 999px; border: 1px solid {{c.line}}; background: {{c.surface}}; color: {{c.fg}}; cursor: pointer">
+<sc-if value="{{isDark}}" hint-placeholder-val="{{true}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+</sc-if>
+<sc-if value="{{isLight}}" hint-placeholder-val="{{false}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>
+</sc-if>
+</button>
+</div>
+</header>
+<nav aria-label="Menu admin sesi" style="display: flex; gap: 4px; flex-wrap: wrap; box-sizing: border-box; padding: 0 28px; border-bottom: 1px solid {{c.line}}">
+<a href="Admin-Sesi-Live.dc.html" aria-current="page" style="display: flex; align-items: center; height: 50px; padding: 0 14px; border-bottom: 3px solid {{c.tabLine}}; color: {{c.fg}}; font-size: 15px; font-weight: 800; text-decoration: none">Live &amp; moderasi</a>
+<a href="Admin-Sesi-Tema.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 14px; border-bottom: 3px solid transparent; color: {{c.muted}}; font-size: 15px; font-weight: 600; text-decoration: none">Tema &amp; tampilan</a>
+<a href="Admin-Sesi-Blocklist.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 14px; border-bottom: 3px solid transparent; color: {{c.muted}}; font-size: 15px; font-weight: 600; text-decoration: none">Blocklist</a>
+<a href="Admin-Sesi-Dashboard.dc.html" style="display: flex; align-items: center; height: 50px; padding: 0 14px; border-bottom: 3px solid transparent; color: {{c.muted}}; font-size: 15px; font-weight: 600; text-decoration: none">Dashboard</a>
+<a href="Admin-Sesi-Dashboard.dc.html#unduh" style="display: flex; align-items: center; height: 50px; padding: 0 14px; border-bottom: 3px solid transparent; color: {{c.muted}}; font-size: 15px; font-weight: 600; text-decoration: none">Hasil &amp; unduh</a>
+</nav>
+<main style="flex-grow: 1; box-sizing: border-box; padding: 24px 32px 48px; display: flex; flex-direction: column; gap: 20px">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px">
+<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap">
+<span style="font-size: 14px; font-weight: 700; color: {{c.muted}}">Moderasi</span>
+<div role="group" aria-label="Mode moderasi" style="display: flex; padding: 4px; border-radius: 14px; background: {{c.surface2}}">
+<button type="button" onClick="{{setLangsung}}" aria-pressed="{{langPressed}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 10px; background: {{langBg}}; color: {{langFg}}; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">Langsung</button>
+<button type="button" onClick="{{setApprove}}" aria-pressed="{{apprPressed}}" style="height: 40px; padding: 0 18px; border: 0; border-radius: 10px; background: {{apprBg}}; color: {{apprFg}}; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">Approve</button>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap">
+<button type="button" onClick="{{togglePause}}" aria-pressed="{{pausePressed}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid {{pauseBorder}}; background: {{pauseBg}}; color: {{pauseFg}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">
+<sc-if value="{{notPaused}}" hint-placeholder-val="{{true}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+</sc-if>
+<sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7V5z"></path></svg>
+</sc-if>
+{{pauseLabel}}
+</button>
+<button type="button" onClick="{{toggleFreeze}}" aria-pressed="{{freezePressed}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid {{freezeBorder}}; background: {{freezeBg}}; color: {{freezeFg}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7"></path></svg>
+{{freezeLabel}}
+</button>
+<button type="button" onClick="{{askClear}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid {{c.danger}}; background: transparent; color: {{c.danger}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"></path></svg>
+Clear
+</button>
+</div>
+</div>
+<sc-if value="{{confirm}}" hint-placeholder-val="{{false}}">
+<div role="alertdialog" aria-label="Konfirmasi clear" style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 14px; box-sizing: border-box; padding: 16px 18px; border-radius: 14px; border: 1px solid {{c.danger}}; background: {{c.dangerBg}}">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 15px; font-weight: 800">Clear photowall sekarang?</span>
+<span style="font-size: 14px; color: {{c.muted}}">Semua kata hilang dari layar. Data tetap tersimpan dan bisa diunduh.</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{cancelClear}}" style="height: 44px; padding: 0 16px; border-radius: 12px; border: 1px solid {{c.line}}; background: {{c.surface}}; color: {{c.fg}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">Batal</button>
+<button type="button" onClick="{{doClear}}" style="height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: {{c.dangerSolid}}; color: #FFFFFF; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">Ya, clear</button>
+</div>
+</div>
+</sc-if>
+<sc-if value="{{paused}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: {{c.warnBg}}; color: {{c.warn}}; font-size: 14px; font-weight: 700">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 5v14M15 5v14"></path></svg>
+Input dijeda. Device input menampilkan pesan tunggu, kata tidak bisa dikirim.
+</div>
+</sc-if>
+<sc-if value="{{frozen}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: {{c.infoBg}}; color: {{c.info}}; font-size: 14px; font-weight: 700">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7"></path></svg>
+Tampilan photowall dibekukan. Kata baru tetap masuk dan tersimpan.
+</div>
+</sc-if>
+<sc-if value="{{cleared}}" hint-placeholder-val="{{false}}">
+<div role="status" style="display: flex; align-items: center; gap: 10px; box-sizing: border-box; padding: 12px 16px; border-radius: 12px; background: {{c.surface2}}; font-size: 14px; font-weight: 700">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+Photowall sudah di-clear. Kata berikutnya mulai dari tengah lagi.
+</div>
+</sc-if>
+<div style="display: flex; flex-wrap: wrap; gap: 20px; align-items: flex-start">
+<div style="flex: 999 1 560px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<sc-if value="{{isApprove}}" hint-placeholder-val="{{false}}">
+<section aria-label="Menunggu approve" style="box-sizing: border-box; border-radius: 18px; border: 2px solid {{c.warn}}; background: {{c.surface}}; overflow: hidden">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 16px 20px; background: {{c.warnBg}}">
+<div style="display: flex; align-items: center; gap: 12px">
+<span style="display: flex; align-items: center; justify-content: center; min-width: 44px; height: 44px; padding: 0 10px; box-sizing: border-box; border-radius: 12px; background: {{c.warnSolid}}; color: {{c.onWarn}}; font-size: 24px; font-weight: 800">{{pendingCount}}</span>
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 17px; font-weight: 800">Menunggu approve</span>
+<span style="font-size: 13px; color: {{c.muted}}">Kata baru tidak tampil sebelum disetujui.</span>
+</div>
+</div>
+<button type="button" onClick="{{approveAll}}" style="display: flex; align-items: center; gap: 8px; height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: {{c.primary}}; color: {{c.onPrimary}}; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+Setujui semua
+</button>
+</div>
+<sc-if value="{{noPending}}" hint-placeholder-val="{{false}}">
+<div style="box-sizing: border-box; padding: 20px; font-size: 14px; color: {{c.muted}}">Tidak ada kata yang menunggu.</div>
+</sc-if>
+<sc-for list="{{pending}}" as="p" hint-placeholder-count="4">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 12px 20px; border-top: 1px solid {{c.line}}">
+<div style="display: flex; flex-direction: column; gap: 2px; min-width: 0">
+<span style="font-size: 22px; font-weight: 800">{{p.text}}</span>
+<span style="font-size: 13px; color: {{c.muted}}">{{p.time}} · {{p.device}}</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{p.reject}}" aria-label="Tolak kata {{p.text}}" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid {{c.line}}; background: transparent; color: {{c.fg}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"></path></svg>
+Tolak
+</button>
+<button type="button" onClick="{{p.approve}}" aria-label="Setujui kata {{p.text}}" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 16px; border-radius: 12px; border: 0; background: {{c.liveSolid}}; color: {{c.onLive}}; font-family: inherit; font-size: 14px; font-weight: 800; cursor: pointer">
+<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+Setujui
+</button>
+</div>
+</div>
+</sc-for>
+</section>
+</sc-if>
+<section aria-label="Live feed" style="box-sizing: border-box; border-radius: 18px; border: 1px solid {{c.line}}; background: {{c.surface}}; overflow: hidden">
+<div style="display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 16px 20px">
+<div style="display: flex; flex-direction: column">
+<span style="font-size: 17px; font-weight: 800">Live feed</span>
+<span style="font-size: 13px; color: {{c.muted}}">Terbaru di atas. Kata yang sama tampil sebagai entri terpisah.</span>
+</div>
+<div role="group" aria-label="Filter" style="display: flex; gap: 6px">
+<sc-for list="{{filters}}" as="f" hint-placeholder-count="3">
+<button type="button" onClick="{{f.pick}}" aria-pressed="{{f.pressed}}" style="height: 36px; padding: 0 12px; border-radius: 999px; border: 1px solid {{f.border}}; background: {{f.bg}}; color: {{f.fg}}; font-family: inherit; font-size: 13px; font-weight: 700; cursor: pointer">{{f.label}}</button>
+</sc-for>
+</div>
+</div>
+<sc-for list="{{feed}}" as="it" hint-placeholder-count="8">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 12px 20px; border-top: 1px solid {{c.line}}; background: {{it.rowBg}}">
+<div style="display: flex; align-items: center; gap: 14px; min-width: 0">
+<div style="display: flex; flex-direction: column; gap: 3px; min-width: 0">
+<div style="display: flex; align-items: center; gap: 10px">
+<span style="font-size: 22px; font-weight: 800; color: {{it.wordColor}}; text-decoration: {{it.deco}}">{{it.text}}</span>
+<sc-if value="{{it.center}}" hint-placeholder-val="{{false}}">
+<span style="display: flex; align-items: center; height: 24px; padding: 0 8px; border-radius: 6px; background: {{c.hl}}; color: {{c.onHl}}; font-size: 12px; font-weight: 800">Di tengah</span>
+</sc-if>
+</div>
+<span style="display: flex; align-items: center; gap: 8px; font-size: 13px; color: {{c.muted}}">
+{{it.time}} · {{it.device}}
+<span style="display: flex; align-items: center; height: 22px; padding: 0 8px; border-radius: 6px; background: {{it.chipBg}}; color: {{it.chipFg}}; font-size: 12px; font-weight: 700">{{it.status}}</span>
+</span>
+</div>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" aria-label="Perbaiki typo {{it.text}}" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; border: 1px solid {{c.line}}; background: transparent; color: {{c.fg}}; cursor: pointer">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16v4z"></path><path d="M13.5 6.5l4 4"></path></svg>
+</button>
+<button type="button" onClick="{{it.toggle}}" aria-label="{{it.toggleLabel}}" style="display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 14px; border-radius: 12px; border: 1px solid {{it.btnBorder}}; background: {{it.btnBg}}; color: {{it.btnFg}}; font-family: inherit; font-size: 14px; font-weight: 700; cursor: pointer">
+<sc-if value="{{it.visible}}" hint-placeholder-val="{{true}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3.2 4.1M6.6 6.6A16.7 16.7 0 0 0 2.5 12s3.5 7 9.5 7a9.7 9.7 0 0 0 5.4-1.6"></path><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"></path></svg>
+</sc-if>
+<sc-if value="{{it.hidden}}" hint-placeholder-val="{{false}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7S2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+</sc-if>
+{{it.btnLabel}}
+</button>
+</div>
+</div>
+</sc-for>
+</section>
+</div>
+<aside style="flex: 1 1 400px; min-width: 0; display: flex; flex-direction: column; gap: 20px">
+<section style="box-sizing: border-box; padding: 18px; border-radius: 18px; border: 1px solid {{c.line}}; background: {{c.surface}}; display: flex; flex-direction: column; gap: 14px">
+<div style="display: flex; align-items: center; justify-content: space-between">
+<span style="font-size: 17px; font-weight: 800">Preview photowall</span>
+<span style="font-size: 13px; font-weight: 600; color: {{c.muted}}">Tema Hitam</span>
+</div>
+<div style="width: 400px; max-width: 100%; height: 225px; border-radius: 12px; overflow: hidden; border: 1px solid {{c.line}}">
+<dc-import name="Main" theme="hitam" w="400" h="225" count="120" latest="bahagia" seed="7" hint-size="400px,225px"></dc-import>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; font-size: 13px; color: {{c.muted}}">
+<span>Di tengah sekarang: <b style="color: {{c.fg}}">bahagia</b></span>
+<span>21:04:12</span>
+</div>
+</section>
+<section style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+<div style="box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid {{c.line}}; background: {{c.surface}}; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 600; color: {{c.muted}}">Total kiriman</span>
+<span style="font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums">214</span>
+</div>
+<div style="box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid {{c.line}}; background: {{c.surface}}; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 600; color: {{c.muted}}">Kata unik</span>
+<span style="font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums">131</span>
+</div>
+<div style="box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid {{c.line}}; background: {{c.surface}}; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 600; color: {{c.muted}}">Menunggu approve</span>
+<span style="font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; color: {{pendingStatColor}}">{{pendingStat}}</span>
+</div>
+<div style="box-sizing: border-box; padding: 16px; border-radius: 16px; border: 1px solid {{c.line}}; background: {{c.surface}}; display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 13px; font-weight: 600; color: {{c.muted}}">Device terhubung</span>
+<span style="font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums">4</span>
+</div>
+</section>
+</aside>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["dark","light"],"default":"dark"},"moderation":{"editor":"enum","options":["langsung","approve"],"default":"langsung"},"$preview":{"width":1440,"height":1180}}'>
+class Component extends DCLogic {
+  pal(mode) {
+    if (mode === 'light') return { bg: '#F4F3EE', surface: '#FFFFFF', surface2: '#EFEEE8', line: '#DCDAD1', fg: '#141416', muted: '#55555D', primary: '#141416', onPrimary: '#FFFFFF', hl: '#FFD400', onHl: '#141416', markBg: '#141416', tabLine: '#141416', segOn: '#141416', segOnFg: '#FFFFFF', live: '#157A3A', liveBg: 'rgba(21,122,58,0.10)', liveSolid: '#157A3A', onLive: '#FFFFFF', warn: '#A84B00', warnBg: 'rgba(214,110,0,0.12)', warnSolid: '#A84B00', onWarn: '#FFFFFF', danger: '#C21F1F', dangerBg: 'rgba(194,31,31,0.07)', dangerSolid: '#C21F1F', info: '#0B5C8C', infoBg: 'rgba(3,105,161,0.10)', hidBg: 'rgba(20,20,22,0.06)', hidFg: '#55555D' };
+    return { bg: '#0D0D0F', surface: '#16161A', surface2: '#1F1F25', line: '#2C2C34', fg: '#F4F3EF', muted: '#A3A3AD', primary: '#FFE14D', onPrimary: '#111111', hl: '#FFE14D', onHl: '#111111', markBg: '#1F1F25', tabLine: '#FFE14D', segOn: '#FFE14D', segOnFg: '#111111', live: '#3DDC84', liveBg: 'rgba(61,220,132,0.14)', liveSolid: '#3DDC84', onLive: '#0B2414', warn: '#FFB25C', warnBg: 'rgba(255,159,67,0.14)', warnSolid: '#FFB25C', onWarn: '#2A1600', danger: '#FF6B6B', dangerBg: 'rgba(255,92,92,0.10)', dangerSolid: '#D93636', info: '#7FD8F7', infoBg: 'rgba(92,207,245,0.12)', hidBg: 'rgba(255,255,255,0.06)', hidFg: '#A3A3AD' };
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var mode = st.mode || this.props.mode || 'dark';
+    var c = this.pal(mode);
+    var mod = st.mod || this.props.moderation || 'langsung';
+    var approve = mod === 'approve';
+    var paused = !!st.paused, frozen = !!st.frozen;
+    var decided = st.decided || {};
+    var order = st.order || [];
+    var hid = st.hid || {};
+    var filter = st.filter || 'semua';
+    var base = [
+      { id: 'f1', text: 'bahagia', time: '21:04:12', device: 'Input-1', hidden: false },
+      { id: 'f2', text: 'irie', time: '21:03:58', device: 'Input-2', hidden: false },
+      { id: 'f3', text: 'seru', time: '21:03:41', device: 'Input-1', hidden: false },
+      { id: 'f4', text: 'one-love', time: '21:03:20', device: 'Input-2', hidden: false },
+      { id: 'f5', text: 'bahagia', time: '21:03:02', device: 'Input-1', hidden: false },
+      { id: 'f6', text: 'jelek', time: '21:02:47', device: 'Input-2', hidden: true },
+      { id: 'f7', text: 'damai', time: '21:02:30', device: 'Input-1', hidden: false },
+      { id: 'f8', text: 'merdeka', time: '21:02:11', device: 'Input-2', hidden: false },
+      { id: 'f9', text: 'santai', time: '21:01:55', device: 'Input-1', hidden: false }
+    ];
+    var pendingAll = [
+      { id: 'p1', text: 'mantap', time: '21:04:31', device: 'Input-2' },
+      { id: 'p2', text: 'rindu', time: '21:04:27', device: 'Input-1' },
+      { id: 'p3', text: 'santuy', time: '21:04:22', device: 'Input-2' },
+      { id: 'p4', text: 'gokil', time: '21:04:16', device: 'Input-1' }
+    ];
+    var byId = {};
+    pendingAll.forEach(function (p) { byId[p.id] = p; });
+    function decide(ids, val) {
+      var d = {}, k;
+      for (k in decided) d[k] = decided[k];
+      var o = order.slice();
+      ids.forEach(function (id) { if (!d[id]) { d[id] = val; o.unshift(id); } });
+      self.setState({ decided: d, order: o });
+    }
+    var pending = approve ? pendingAll.filter(function (p) { return !decided[p.id]; }).map(function (p) {
+      return { text: p.text, time: p.time, device: p.device, approve: function () { decide([p.id], 'ok'); }, reject: function () { decide([p.id], 'no'); } };
+    }) : [];
+    var feedRaw = order.map(function (id) {
+      var p = byId[id];
+      return { id: id, text: p.text, time: p.time, device: p.device, hidden: decided[id] === 'no' };
+    }).concat(base);
+    var firstVisible = null;
+    var feed = [];
+    feedRaw.forEach(function (it) {
+      var isHidden = hid[it.id] != null ? hid[it.id] : it.hidden;
+      if (!isHidden && !firstVisible) firstVisible = it.id;
+      if (filter === 'tampil' && isHidden) return;
+      if (filter === 'sembunyi' && !isHidden) return;
+      feed.push({
+        text: it.text,
+        time: it.time,
+        device: it.device,
+        hidden: isHidden,
+        visible: !isHidden,
+        center: false,
+        _id: it.id,
+        wordColor: isHidden ? c.muted : c.fg,
+        deco: isHidden ? 'line-through' : 'none',
+        status: isHidden ? 'Disembunyikan' : 'Tampil',
+        chipBg: isHidden ? c.hidBg : c.liveBg,
+        chipFg: isHidden ? c.hidFg : c.live,
+        rowBg: 'transparent',
+        btnLabel: isHidden ? 'Tampilkan lagi' : 'Sembunyikan',
+        toggleLabel: (isHidden ? 'Tampilkan lagi kata ' : 'Sembunyikan kata ') + it.text,
+        btnBorder: isHidden ? c.line : c.line,
+        btnBg: 'transparent',
+        btnFg: c.fg,
+        toggle: function () { var h = {}, k; for (k in hid) h[k] = hid[k]; h[it.id] = !isHidden; self.setState({ hid: h }); }
+      });
+    });
+    feed.forEach(function (f) { f.center = f._id === firstVisible && !st.cleared; });
+    var filters = [
+      { id: 'semua', label: 'Semua' },
+      { id: 'tampil', label: 'Tampil' },
+      { id: 'sembunyi', label: 'Disembunyikan' }
+    ].map(function (f) {
+      var on = f.id === filter;
+      f.pressed = on ? 'true' : 'false';
+      f.bg = on ? c.segOn : 'transparent';
+      f.fg = on ? c.segOnFg : c.fg;
+      f.border = on ? c.segOn : c.line;
+      f.pick = function () { self.setState({ filter: f.id }); };
+      return f;
+    });
+    var statusLabel = 'LIVE', statusBg = c.liveBg, statusFg = c.live;
+    if (paused) { statusLabel = 'INPUT DIJEDA'; statusBg = c.warnBg; statusFg = c.warn; }
+    if (frozen) { statusLabel = 'DIBEKUKAN'; statusBg = c.infoBg; statusFg = c.info; }
+    return {
+      c: c,
+      isDark: mode === 'dark',
+      isLight: mode === 'light',
+      modeNext: mode === 'dark' ? 'terang' : 'gelap',
+      toggleMode: function () { self.setState({ mode: mode === 'dark' ? 'light' : 'dark' }); },
+      statusLabel: statusLabel, statusBg: statusBg, statusFg: statusFg,
+      isApprove: approve,
+      langPressed: approve ? 'false' : 'true',
+      apprPressed: approve ? 'true' : 'false',
+      langBg: approve ? 'transparent' : c.segOn,
+      langFg: approve ? c.fg : c.segOnFg,
+      apprBg: approve ? c.segOn : 'transparent',
+      apprFg: approve ? c.segOnFg : c.fg,
+      setLangsung: function () { self.setState({ mod: 'langsung' }); },
+      setApprove: function () { self.setState({ mod: 'approve' }); },
+      paused: paused,
+      notPaused: !paused,
+      pausePressed: paused ? 'true' : 'false',
+      pauseLabel: paused ? 'Lanjutkan input' : 'Pause input',
+      pauseBg: paused ? c.warnBg : 'transparent',
+      pauseFg: paused ? c.warn : c.fg,
+      pauseBorder: paused ? c.warn : c.line,
+      togglePause: function () { self.setState({ paused: !paused }); },
+      frozen: frozen,
+      freezePressed: frozen ? 'true' : 'false',
+      freezeLabel: frozen ? 'Cairkan tampilan' : 'Freeze tampilan',
+      freezeBg: frozen ? c.infoBg : 'transparent',
+      freezeFg: frozen ? c.info : c.fg,
+      freezeBorder: frozen ? c.info : c.line,
+      toggleFreeze: function () { self.setState({ frozen: !frozen }); },
+      confirm: !!st.confirm,
+      cleared: !!st.cleared,
+      askClear: function () { self.setState({ confirm: true }); },
+      cancelClear: function () { self.setState({ confirm: false }); },
+      doClear: function () { self.setState({ confirm: false, cleared: true }); },
+      pending: pending,
+      pendingCount: pending.length,
+      noPending: approve && pending.length === 0,
+      approveAll: function () { decide(pendingAll.filter(function (p) { return !decided[p.id]; }).map(function (p) { return p.id; }), 'ok'); },
+      pendingStat: approve ? String(pending.length) : '0',
+      pendingStatColor: approve && pending.length ? c.warn : c.fg,
+      filters: filters,
+      feed: feed
+    };
+  }
+}
+</script>
+</body>
+</html>

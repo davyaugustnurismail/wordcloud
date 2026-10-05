@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Siap tayang</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Plus+Jakarta+Sans:wght@400;500;600;700;800&amp;family=JetBrains+Mono:wght@500;700&amp;display=swap" rel="stylesheet">
+<style>body{margin:0}</style>
+</helmet>
+<div style="min-height: 100vh; box-sizing: border-box; background: {{c.bg}}; color: {{c.fg}}; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column">
+<header style="display: flex; align-items: center; justify-content: flex-end; box-sizing: border-box; padding: 16px 32px">
+<button type="button" onClick="{{toggleMode}}" aria-label="Ganti ke mode {{modeNext}}" style="display: flex; align-items: center; gap: 8px; height: 40px; padding: 0 14px; border-radius: 999px; border: 1px solid {{c.line}}; background: {{c.surface}}; color: {{c.fg}}; font-family: inherit; font-size: 14px; font-weight: 600; cursor: pointer">
+<sc-if value="{{isDark}}" hint-placeholder-val="{{true}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"></path></svg>
+</sc-if>
+<sc-if value="{{isLight}}" hint-placeholder-val="{{false}}">
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"></path></svg>
+</sc-if>
+Mode {{modeNext}}
+</button>
+</header>
+<main style="flex-grow: 1; box-sizing: border-box; padding: 36px 24px 56px; display: flex; justify-content: center">
+<div style="width: 100%; max-width: 1120px; display: flex; flex-direction: column; gap: 24px">
+<div style="display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 16px">
+<div style="display: flex; flex-direction: column; gap: 6px">
+<div style="font-size: 14px; font-weight: 700; color: {{c.muted}}">Sesi Photowall</div>
+<h1 style="margin: 0; font-size: 36px; font-weight: 800; letter-spacing: -0.02em">Sesi siap tayang</h1>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px">
+<span style="display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: 999px; background: {{c.liveBg}}; color: {{c.live}}; font-size: 14px; font-weight: 700">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: {{c.live}}"></span>
+Input terhubung: 2
+</span>
+<span style="display: flex; align-items: center; height: 34px; padding: 0 14px; border-radius: 999px; background: {{c.warnBg}}; color: {{c.warn}}; font-size: 14px; font-weight: 700">Belum tayang</span>
+</div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 20px">
+<section style="flex: 999 1 560px; min-width: 0; box-sizing: border-box; padding: 28px; border-radius: 20px; background: {{c.surface}}; border: 1px solid {{c.line}}; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Kode sesi untuk device input</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: {{c.muted}}">Buka [domainmu]/join di device input, lalu ketik kode ini. Atau scan QR.</p>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 10px" aria-label="Kode sesi R G W 4 T K">
+<sc-for list="{{codeChars}}" as="ch" hint-placeholder-count="6">
+<span style="display: flex; align-items: center; justify-content: center; width: 76px; height: 92px; border-radius: 14px; background: {{c.hl}}; color: {{c.onHl}}; font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 52px">{{ch}}</span>
+</sc-for>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 24px; align-items: center">
+<div style="display: flex; flex-direction: column; align-items: center; gap: 8px">
+<div style="box-sizing: border-box; width: 184px; height: 184px; padding: 12px; border-radius: 14px; background: #FFFFFF; border: 1px solid {{c.line}}">
+<div style="display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); width: 100%; height: 100%">
+<sc-for list="{{qr}}" as="q" hint-placeholder-count="0">
+<span style="background: {{q}}"></span>
+</sc-for>
+</div>
+</div>
+<span style="font-size: 12px; color: {{c.muted}}">QR join (contoh tampilan)</span>
+</div>
+<ol style="flex: 1 1 260px; min-width: 0; margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 10px; font-size: 15px; line-height: 1.5">
+<li>Device input apa saja: HP, tablet, atau laptop.</li>
+<li>Setelah join, device langsung masuk halaman input kiosk.</li>
+<li>Kode tanpa huruf ambigu: tidak ada O, 0, I, atau 1.</li>
+</ol>
+</div>
+</section>
+<section style="flex: 1 1 340px; min-width: 0; box-sizing: border-box; padding: 28px; border-radius: 20px; background: {{c.surface}}; border: 1px solid {{c.line}}; display: flex; flex-direction: column; gap: 18px">
+<div style="display: flex; flex-direction: column; gap: 4px">
+<h2 style="margin: 0; font-size: 18px; font-weight: 800">Akses admin sesi</h2>
+<p style="margin: 0; font-size: 14px; line-height: 1.5; color: {{c.muted}}">Catat untuk operator. Device tanpa kamera cukup ketik kode dan PIN di Masuk admin.</p>
+</div>
+<div style="display: flex; flex-direction: column; gap: 12px">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: {{c.surface2}}">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {{c.muted}}">Kode sesi</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 26px">RGW4TK</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 12px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: {{c.surface2}}">
+<div style="display: flex; flex-direction: column; gap: 2px">
+<span style="font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: {{c.muted}}">PIN admin</span>
+<span style="font-family: 'JetBrains Mono', monospace; font-weight: 700; font-size: 26px; letter-spacing: 0.06em">{{pinShown}}</span>
+</div>
+<div style="display: flex; gap: 8px">
+<button type="button" onClick="{{togglePin}}" aria-label="{{pinLabel}}" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; border: 1px solid {{c.line}}; background: {{c.surface}}; color: {{c.fg}}; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 12S6 5 12 5s9.5 7 9.5 7-3.5 7-9.5 7S2.5 12 2.5 12z"></path><circle cx="12" cy="12" r="3"></circle></svg>
+</button>
+<button type="button" aria-label="Salin PIN" style="display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; border-radius: 12px; border: 1px solid {{c.line}}; background: {{c.surface}}; color: {{c.fg}}; cursor: pointer">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="9" width="11" height="11" rx="2"></rect><path d="M5 15V5a1 1 0 0 1 1-1h9"></path></svg>
+</button>
+</div>
+</div>
+</div>
+<a href="Admin-Sesi-Live.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 8px; height: 50px; border-radius: 14px; border: 1px solid {{c.line}}; color: {{c.fg}}; font-size: 15px; font-weight: 700; text-decoration: none">
+<span>Buka admin sesi di device&nbsp;ini</span>
+<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"></path></svg>
+</a>
+<div style="display: flex; align-items: center; gap: 16px; box-sizing: border-box; padding: 14px 16px; border-radius: 14px; background: {{c.surface2}}">
+<div style="flex-shrink: 0; box-sizing: border-box; width: 128px; height: 128px; padding: 9px; border-radius: 12px; background: #FFFFFF; border: 1px solid {{c.line}}">
+<div role="img" aria-label="QR masuk admin sesi" style="display: grid; grid-template-columns: repeat(25, minmax(0, 1fr)); width: 100%; height: 100%">
+<sc-for list="{{qrAdmin}}" as="q" hint-placeholder-count="0">
+<span style="background: {{q}}"></span>
+</sc-for>
+</div>
+</div>
+<div style="display: flex; flex-direction: column; gap: 4px">
+<span style="font-size: 15px; font-weight: 800">QR admin sesi</span>
+<span style="font-size: 13px; line-height: 1.5; color: {{c.muted}}">Jalan pintas untuk device berkamera. PIN tetap diminta.</span>
+<span style="font-size: 12px; color: {{c.muted}}">Contoh tampilan</span>
+</div>
+</div>
+</section>
+</div>
+<div style="display: flex; flex-direction: column; gap: 10px">
+<a href="Main.dc.html" style="display: flex; align-items: center; justify-content: center; gap: 12px; height: 76px; border-radius: 18px; background: {{c.primary}}; color: {{c.onPrimary}}; font-size: 22px; font-weight: 800; text-decoration: none">
+<svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 5l12 7-12 7V5z"></path></svg>
+Mulai tayang
+</a>
+<p style="margin: 0; text-align: center; font-size: 14px; color: {{c.muted}}">Masuk fullscreen, kursor disembunyikan, dan layar dijaga tetap menyala (Wake Lock).</p>
+</div>
+</div>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"mode":{"editor":"enum","options":["dark","light"],"default":"dark"},"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  pal(mode) {
+    if (mode === 'light') return { bg: '#F4F3EE', surface: '#FFFFFF', surface2: '#EFEEE8', line: '#DCDAD1', fg: '#141416', muted: '#55555D', primary: '#141416', onPrimary: '#FFFFFF', hl: '#FFD400', onHl: '#141416', markBg: '#141416', live: '#157A3A', liveBg: 'rgba(21,122,58,0.10)', warn: '#A84B00', warnBg: 'rgba(214,110,0,0.12)', okFill: '#141416', okBg: '#FFF8CC' };
+    return { bg: '#0D0D0F', surface: '#16161A', surface2: '#1F1F25', line: '#2C2C34', fg: '#F4F3EF', muted: '#A3A3AD', primary: '#FFE14D', onPrimary: '#111111', hl: '#FFE14D', onHl: '#111111', markBg: '#1F1F25', live: '#3DDC84', liveBg: 'rgba(61,220,132,0.14)', warn: '#FFB25C', warnBg: 'rgba(255,159,67,0.16)', okFill: '#FFE14D', okBg: 'rgba(255,225,77,0.08)' };
+  }
+  qr(seed) {
+    seed = seed || 99;
+    this._qrs = this._qrs || {};
+    if (this._qrs[seed]) return this._qrs[seed];
+    var n = 25, cells = [], a = seed;
+    function rnd() { a = (a * 1103515245 + 12345) & 0x7fffffff; return a / 0x7fffffff; }
+    function finder(x, y, ox, oy) {
+      var dx = x - ox, dy = y - oy;
+      if (dx < 0 || dy < 0 || dx > 6 || dy > 6) return -1;
+      if (dx === 0 || dy === 0 || dx === 6 || dy === 6) return 1;
+      if (dx >= 2 && dx <= 4 && dy >= 2 && dy <= 4) return 1;
+      return 0;
+    }
+    for (var y = 0; y < n; y++) {
+      for (var x = 0; x < n; x++) {
+        var f = finder(x, y, 0, 0);
+        if (f < 0) f = finder(x, y, n - 7, 0);
+        if (f < 0) f = finder(x, y, 0, n - 7);
+        var on;
+        if (f >= 0) on = f === 1;
+        else if ((x === 7 || y === 7) && (x < 8 && y < 8)) on = false;
+        else if ((x === n - 8 && y < 8) || (y === n - 8 && x < 8) || (y === 7 && x > n - 9) || (x === 7 && y > n - 9)) on = false;
+        else if (y === 6) on = x % 2 === 0;
+        else if (x === 6) on = y % 2 === 0;
+        else on = rnd() < 0.48;
+        cells.push(on ? '#111111' : '#FFFFFF');
+      }
+    }
+    this._qrs[seed] = cells;
+    return cells;
+  }
+  renderVals() {
+    var self = this;
+    var st = this.state || {};
+    var mode = st.mode || this.props.mode || 'dark';
+    var c = this.pal(mode);
+    return {
+      c: c,
+      isDark: mode === 'dark',
+      isLight: mode === 'light',
+      modeNext: mode === 'dark' ? 'terang' : 'gelap',
+      toggleMode: function () { self.setState({ mode: mode === 'dark' ? 'light' : 'dark' }); },
+      codeChars: ['R', 'G', 'W', '4', 'T', 'K'],
+      qr: this.qr(99),
+      qrAdmin: this.qr(4271),
+      pinShown: st.showPin ? '482 913' : '••• •••',
+      pinLabel: st.showPin ? 'Sembunyikan PIN' : 'Tampilkan PIN',
+      togglePin: function () { self.setState({ showPin: !st.showPin }); }
+    };
+  }
+}
+</script>
+</body>
+</html>

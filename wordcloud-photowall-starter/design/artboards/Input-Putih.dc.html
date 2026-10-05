@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Input kata — tema Putih</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+input:focus{outline:none}
+</style>
+</helmet>
+<div style="position: relative; width: 1180px; height: 820px; overflow: hidden; box-sizing: border-box; padding: 40px 56px; background: #FFFFFF; color: #141416; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column">
+<div style="display: flex; align-items: center; justify-content: flex-end">
+<div style="display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; color: #5B5B63">
+<span style="width: 10px; height: 10px; border-radius: 999px; background: #15803D"></span>
+Terhubung
+</div>
+</div>
+<div style="flex-grow: 1; display: flex; align-items: center; justify-content: center">
+<div style="width: 820px; padding: 44px 52px; border-radius: 36px; border: 1px solid {{cardBorder}}; background: {{cardBg}}; backdrop-filter: {{cardBlur}}; display: flex; flex-direction: column; gap: 28px">
+<div style="display: flex; flex-direction: column; gap: 10px; align-items: center; text-align: center">
+<label for="kata-putih" style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 68px; line-height: 1.02; white-space: pre-line">{{prompt}}</label>
+</div>
+<form style="display: flex; flex-direction: column; gap: 18px; margin: 0">
+<input id="kata-putih" type="text" value="luar biasa" readonly="readonly" aria-invalid="true" aria-describedby="bantu-putih" style="box-sizing: border-box; width: 100%; height: 116px; padding: 0 28px; border-radius: 22px; border: 4px solid #C62828; background: #F6F5F1; color: #141416; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 56px; text-align: center">
+<div style="display: flex; align-items: center; justify-content: space-between; gap: 16px">
+<div id="bantu-putih" role="alert" style="display: flex; align-items: center; gap: 8px; font-size: 19px; font-weight: 700; color: #C62828">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7.5v5.5M12 16.5v.01"></path></svg>
+Cukup satu kata ya
+</div>
+<div style="font-size: 17px; font-weight: 700; color: #5B5B63; font-variant-numeric: tabular-nums">10/20</div>
+</div>
+<button type="button" disabled="disabled" style="height: 96px; border: 0; border-radius: 22px; background: #E7E6E0; color: #6E6E74; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 42px">Kirim</button>
+</form>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"prompt":{"editor":"text","default":"Satu kata untuk malam ini?"},"blur":{"editor":"boolean","default":false},"$preview":{"width":1180,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var blurOn = !!this.props.blur;
+    return {
+      prompt: this.props.prompt != null ? this.props.prompt : 'Satu kata untuk malam ini?',
+      cardBg: blurOn ? 'rgba(20,20,22,0.04)' : 'transparent',
+      cardBorder: blurOn ? 'rgba(20,20,22,0.10)' : 'transparent',
+      cardBlur: blurOn ? 'blur(18px)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

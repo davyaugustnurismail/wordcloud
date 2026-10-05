@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Input HP — terkirim</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+input::placeholder{color:#6E6E74;opacity:1}
+input:focus{outline:none}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #F5C02E; color: #0C0C0C; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column">
+<div style="position: absolute; left: 0; top: 0; width: 100%; height: 100%; display: flex; flex-direction: column">
+<div style="flex-grow: 1; background: #D62F2F"></div>
+<div style="flex-grow: 1; background: #F5C02E"></div>
+<div style="flex-grow: 1; background: #17924A"></div>
+</div>
+<div style="position: relative; box-sizing: border-box; padding: 24px 22px 0; display: flex; align-items: center; justify-content: flex-end">
+<div style="display: flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; background: #0C0C0C; font-size: 13px; font-weight: 600; color: #FFFFFF">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: #3DDC84"></span>
+Terhubung
+</div>
+</div>
+<div style="position: relative; flex-grow: 1; box-sizing: border-box; padding: 0 22px 56px; display: flex; flex-direction: column; justify-content: center; gap: 22px">
+<div role="status" style="align-self: center; display: flex; align-items: center; gap: 8px; padding: 9px 16px 9px 10px; border-radius: 999px; background: #0C0C0C; color: #FFFFFF; font-size: 16px; font-weight: 700">
+<span style="display: flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 999px; background: #17924A">
+<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"></path></svg>
+</span>
+Terkirim — lihat layar!
+</div>
+<div style="padding: 24px 20px; border-radius: 26px; border: 1px solid {{cardBorder}}; background: {{cardBg}}; backdrop-filter: {{cardBlur}}; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px; text-align: center">
+<label for="kata-hp1" style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 40px; line-height: 1.04; color: #0C0C0C; white-space: pre-line">{{prompt}}</label>
+</div>
+<form style="display: flex; flex-direction: column; gap: 12px; margin: 0">
+<input id="kata-hp1" type="text" value="" readonly="readonly" placeholder="ketik satu kata" style="box-sizing: border-box; width: 100%; height: 76px; padding: 0 18px; border-radius: 18px; border: 4px solid #0C0C0C; background: #FFFFFF; color: #0C0C0C; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 34px; text-align: center">
+<div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 700; color: #0C0C0C">
+<span>Cukup satu kata, tanpa spasi.</span>
+<span style="font-variant-numeric: tabular-nums">0/20</span>
+</div>
+<button type="button" disabled="disabled" style="height: 68px; border: 0; border-radius: 18px; background: rgba(12,12,12,0.55); color: #D9D9D9; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 30px">Kirim</button>
+</form>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"prompt":{"editor":"text","default":"Satu kata untuk malam ini?"},"blur":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var blurOn = !!this.props.blur;
+    return {
+      prompt: this.props.prompt != null ? this.props.prompt : 'Satu kata untuk malam ini?',
+      cardBg: blurOn ? 'rgba(255,255,255,0.32)' : 'transparent',
+      cardBorder: blurOn ? 'rgba(255,255,255,0.45)' : 'transparent',
+      cardBlur: blurOn ? 'blur(18px)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

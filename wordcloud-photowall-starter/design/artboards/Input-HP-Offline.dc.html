@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<title>Input HP — koneksi putus</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@700;800&amp;family=Plus+Jakarta+Sans:wght@500;600;700;800&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+input:focus{outline:none}
+</style>
+</helmet>
+<div style="position: relative; width: 390px; height: 844px; overflow: hidden; background: #FFFFFF; color: #141416; font-family: 'Plus Jakarta Sans', system-ui, sans-serif; display: flex; flex-direction: column">
+<div role="status" style="display: flex; align-items: center; gap: 10px; box-sizing: border-box; padding: 14px 22px; background: #FFF1DC; color: #7A3E00; font-size: 14px; font-weight: 700">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"></path><path d="M8.5 16.5a5 5 0 0 1 7 0M5 13a10 10 0 0 1 5-2.7M14.5 10.4A10 10 0 0 1 19 13M2 9.5a15 15 0 0 1 4.3-2.6M10 6.1A15 15 0 0 1 22 9.5"></path><path d="M12 20h.01"></path></svg>
+Koneksi terputus. Menyambung ulang…
+</div>
+<div style="box-sizing: border-box; padding: 20px 22px 0; display: flex; align-items: center; justify-content: flex-end">
+<div style="display: flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 600; color: #B42318">
+<span style="width: 8px; height: 8px; border-radius: 999px; background: #B42318"></span>
+Offline
+</div>
+</div>
+<div style="flex-grow: 1; box-sizing: border-box; padding: 0 22px 56px; display: flex; flex-direction: column; justify-content: center; gap: 22px">
+<div style="padding: 24px 20px; border-radius: 26px; border: 1px solid {{cardBorder}}; background: {{cardBg}}; backdrop-filter: {{cardBlur}}; display: flex; flex-direction: column; gap: 22px">
+<div style="display: flex; flex-direction: column; gap: 6px; text-align: center">
+<label for="kata-hp3" style="font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 40px; line-height: 1.04; white-space: pre-line">{{prompt}}</label>
+</div>
+<form style="display: flex; flex-direction: column; gap: 12px; margin: 0">
+<input id="kata-hp3" type="text" value="santai" readonly="readonly" style="box-sizing: border-box; width: 100%; height: 76px; padding: 0 18px; border-radius: 18px; border: 4px solid #141416; background: #F6F5F1; color: #141416; font-family: 'Baloo 2', sans-serif; font-weight: 800; font-size: 34px; text-align: center">
+<div style="display: flex; justify-content: space-between; font-size: 14px; font-weight: 600; color: #5B5B63">
+<span>Kata tidak hilang, tunggu sebentar.</span>
+<span style="font-variant-numeric: tabular-nums">6/20</span>
+</div>
+<button type="button" disabled="disabled" style="height: 68px; border: 0; border-radius: 18px; background: #E7E6E0; color: #6E6E74; font-family: 'Plus Jakarta Sans', sans-serif; font-weight: 800; font-size: 20px; display: flex; align-items: center; justify-content: center; gap: 10px">
+<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><path d="M12 3a9 9 0 1 0 9 9"></path></svg>
+Menunggu koneksi
+</button>
+</form>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"prompt":{"editor":"text","default":"Satu kata untuk malam ini?"},"blur":{"editor":"boolean","default":false},"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    var blurOn = !!this.props.blur;
+    return {
+      prompt: this.props.prompt != null ? this.props.prompt : 'Satu kata untuk malam ini?',
+      cardBg: blurOn ? 'rgba(20,20,22,0.04)' : 'transparent',
+      cardBorder: blurOn ? 'rgba(20,20,22,0.10)' : 'transparent',
+      cardBlur: blurOn ? 'blur(18px)' : 'none'
+    };
+  }
+}
+</script>
+</body>
+</html>

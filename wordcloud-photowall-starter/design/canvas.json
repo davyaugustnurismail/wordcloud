@@ -1,0 +1,613 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Admin-Global-Blocklist-Light.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin global — Blocklist, default, gambar (terang)",
+      "w": 1440,
+      "x": 2880,
+      "y": 5420
+    },
+    "Admin-Global-Blocklist.dc.html": {
+      "expand": "fill",
+      "h": 1500,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin global — Blocklist, default, gambar (gelap)",
+      "w": 1440,
+      "x": 2880,
+      "y": 3560
+    },
+    "Admin-Global-Light.dc.html": {
+      "expand": "fill",
+      "h": 1240,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin global — Dashboard & sesi (terang)",
+      "w": 1440,
+      "x": 1360,
+      "y": 5420
+    },
+    "Admin-Global-Login-Light.dc.html": {
+      "expand": "fill",
+      "h": 720,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Login admin global (terang)",
+      "w": 1280,
+      "x": 0,
+      "y": 5420
+    },
+    "Admin-Global-Login.dc.html": {
+      "expand": "fill",
+      "h": 720,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Login admin global (gelap)",
+      "w": 1280,
+      "x": 0,
+      "y": 3560
+    },
+    "Admin-Global.dc.html": {
+      "expand": "fill",
+      "h": 1240,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin global — Dashboard & sesi (gelap)",
+      "w": 1440,
+      "x": 1360,
+      "y": 3560
+    },
+    "Admin-Sesi-Blocklist.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Blocklist (gelap)",
+      "w": 1440,
+      "x": 5030,
+      "y": 0
+    },
+    "Admin-Sesi-Blocklist-Light.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Blocklist (terang)",
+      "w": 1440,
+      "x": 5030,
+      "y": 1780
+    },
+    "Admin-Sesi-Dashboard-Light.dc.html": {
+      "expand": "fill",
+      "h": 1240,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Dashboard & unduh (terang)",
+      "w": 1440,
+      "x": 3040,
+      "y": 1780
+    },
+    "Admin-Sesi-Dashboard.dc.html": {
+      "expand": "fill",
+      "h": 1240,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Dashboard & unduh (gelap)",
+      "w": 1440,
+      "x": 3040,
+      "y": 0
+    },
+    "Admin-Sesi-HP-Light.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi HP — mode Approve (terang)",
+      "w": 390,
+      "x": 4560,
+      "y": 1780
+    },
+    "Admin-Sesi-HP.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi HP — mode Approve (gelap)",
+      "w": 390,
+      "x": 4560,
+      "y": 0
+    },
+    "Admin-Sesi-Live-Light.dc.html": {
+      "expand": "fill",
+      "h": 1180,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Live, mode Approve (terang)",
+      "w": 1440,
+      "x": 0,
+      "y": 1780
+    },
+    "Admin-Sesi-Live.dc.html": {
+      "expand": "fill",
+      "h": 1180,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Live & moderasi (gelap)",
+      "w": 1440,
+      "x": 0,
+      "y": 0
+    },
+    "Admin-Sesi-Tema-Light.dc.html": {
+      "expand": "fill",
+      "h": 1420,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Tema & tampilan (terang)",
+      "w": 1440,
+      "x": 1520,
+      "y": 1780
+    },
+    "Admin-Sesi-Tema.dc.html": {
+      "expand": "fill",
+      "h": 1420,
+      "is_interactive": true,
+      "page": "admin",
+      "title": "Admin sesi — Tema & tampilan (gelap)",
+      "w": 1440,
+      "x": 1520,
+      "y": 0
+    },
+    "Create-Light.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Create Session — terang",
+      "w": 1280,
+      "x": 1360,
+      "y": 1659
+    },
+    "Create.dc.html": {
+      "expand": "fill",
+      "h": 1440,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Create Session — gelap",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Input-Foto.dc.html": {
+      "h": 820,
+      "page": "audiens",
+      "title": "Input — Foto",
+      "w": 1180,
+      "x": 3780,
+      "y": 2160
+    },
+    "Input-HP-Ditolak.dc.html": {
+      "h": 844,
+      "page": "audiens",
+      "title": "Input HP — Hitam, kata diblokir",
+      "w": 390,
+      "x": 470,
+      "y": 3340
+    },
+    "Input-HP-Offline.dc.html": {
+      "h": 844,
+      "page": "audiens",
+      "title": "Input HP — Putih, koneksi putus",
+      "w": 390,
+      "x": 940,
+      "y": 3340
+    },
+    "Input-HP-Terkirim.dc.html": {
+      "h": 844,
+      "page": "audiens",
+      "title": "Input HP — Reggae, terkirim",
+      "w": 390,
+      "x": 0,
+      "y": 3340
+    },
+    "Input-Hitam.dc.html": {
+      "h": 820,
+      "page": "audiens",
+      "title": "Input — Hitam (sedang mengetik)",
+      "w": 1180,
+      "x": 1260,
+      "y": 2160
+    },
+    "Input-Putih.dc.html": {
+      "h": 820,
+      "page": "audiens",
+      "title": "Input — Putih (lebih dari satu kata)",
+      "w": 1180,
+      "x": 2520,
+      "y": 2160
+    },
+    "Input-Reggae.dc.html": {
+      "h": 820,
+      "is_interactive": true,
+      "page": "audiens",
+      "title": "Input — Reggae (tablet, bisa dicoba)",
+      "w": 1180,
+      "x": 0,
+      "y": 2160
+    },
+    "Join-HP-Light.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (HP) — terang",
+      "w": 390,
+      "x": 4080,
+      "y": 1540
+    },
+    "Join-HP.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (HP) — gelap",
+      "w": 390,
+      "x": 4080,
+      "y": 0
+    },
+    "Landing-Light.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Landing — terang",
+      "w": 1280,
+      "x": 0,
+      "y": 1540
+    },
+    "Landing.dc.html": {
+      "expand": "fill",
+      "h": 820,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Landing — gelap",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 720,
+      "page": "audiens",
+      "title": "Photowall — Hitam (mesin wordcloud)",
+      "w": 1280,
+      "x": 0,
+      "y": 0
+    },
+    "Masuk-Admin-HP-Light.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (HP) — terang",
+      "w": 390,
+      "x": 4550,
+      "y": 1540
+    },
+    "Masuk-Admin-HP.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (HP) — gelap",
+      "w": 390,
+      "x": 4550,
+      "y": 0
+    },
+    "Photowall-Awal.dc.html": {
+      "h": 720,
+      "page": "audiens",
+      "title": "Photowall — awal acara, 6 kata",
+      "w": 1280,
+      "x": 0,
+      "y": 1080
+    },
+    "Photowall-Foto.dc.html": {
+      "h": 720,
+      "page": "audiens",
+      "title": "Photowall — Foto",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Photowall-Penuh.dc.html": {
+      "h": 720,
+      "page": "audiens",
+      "title": "Photowall — penuh, 300 kata",
+      "w": 1280,
+      "x": 1360,
+      "y": 1080
+    },
+    "Photowall-Putih.dc.html": {
+      "h": 720,
+      "page": "audiens",
+      "title": "Photowall — Putih",
+      "w": 1280,
+      "x": 1360,
+      "y": 0
+    },
+    "Siap-Tayang-Light.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Siap tayang — terang",
+      "w": 1280,
+      "x": 2720,
+      "y": 1540
+    },
+    "Siap-Tayang.dc.html": {
+      "expand": "fill",
+      "h": 900,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Siap tayang — gelap",
+      "w": 1280,
+      "x": 2720,
+      "y": 0
+    },
+    "Join-Desktop.dc.html": {
+      "expand": "fill",
+      "h": 800,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (desktop) — gelap",
+      "w": 1280,
+      "x": 0,
+      "y": 3500
+    },
+    "Join-Tablet.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (tablet) — gelap",
+      "w": 820,
+      "x": 1360,
+      "y": 3500
+    },
+    "Masuk-Admin-Desktop.dc.html": {
+      "expand": "fill",
+      "h": 800,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (desktop) — gelap",
+      "w": 1280,
+      "x": 2260,
+      "y": 3500
+    },
+    "Masuk-Admin-Tablet.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (tablet) — gelap",
+      "w": 820,
+      "x": 3620,
+      "y": 3500
+    },
+    "Join-Desktop-Light.dc.html": {
+      "expand": "fill",
+      "h": 800,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (desktop) — terang",
+      "w": 1280,
+      "x": 0,
+      "y": 5040
+    },
+    "Join-Tablet-Light.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Join Session (tablet) — terang",
+      "w": 820,
+      "x": 1360,
+      "y": 5040
+    },
+    "Masuk-Admin-Desktop-Light.dc.html": {
+      "expand": "fill",
+      "h": 800,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (desktop) — terang",
+      "w": 1280,
+      "x": 2260,
+      "y": 5040
+    },
+    "Masuk-Admin-Tablet-Light.dc.html": {
+      "h": 1180,
+      "is_interactive": true,
+      "page": "crew",
+      "title": "Masuk admin sesi (tablet) — terang",
+      "w": 820,
+      "x": 3620,
+      "y": 5040
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-05T13:20:00Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "page": "audiens",
+    "view": "canvas"
+  },
+  "notes": {
+    "t-ad": {
+      "kind": "title1",
+      "maxW": 6470,
+      "page": "admin",
+      "text": "Admin sesi — mode gelap",
+      "w": 240,
+      "x": 0,
+      "y": -280
+    },
+    "t-al": {
+      "kind": "title1",
+      "maxW": 6470,
+      "page": "admin",
+      "text": "Admin sesi — mode terang",
+      "w": 240,
+      "x": 0,
+      "y": 1500
+    },
+    "t-cd": {
+      "kind": "title1",
+      "maxW": 4940,
+      "page": "crew",
+      "text": "Alur crew — mode gelap",
+      "w": 240,
+      "x": 0,
+      "y": -280
+    },
+    "t-jd": {
+      "kind": "title1",
+      "maxW": 4440,
+      "page": "crew",
+      "text": "Join & Masuk admin — desktop dan tablet, mode gelap",
+      "x": 0,
+      "y": 3240
+    },
+    "t-jl": {
+      "kind": "title1",
+      "maxW": 4440,
+      "page": "crew",
+      "text": "Join & Masuk admin — desktop dan tablet, mode terang",
+      "x": 0,
+      "y": 4780
+    },
+    "t-cl": {
+      "kind": "title1",
+      "maxW": 4940,
+      "page": "crew",
+      "text": "Alur crew — mode terang",
+      "w": 240,
+      "x": 0,
+      "y": 1260
+    },
+    "t-gd": {
+      "kind": "title1",
+      "maxW": 4320,
+      "page": "admin",
+      "text": "Admin global — mode gelap",
+      "w": 240,
+      "x": 0,
+      "y": 3280
+    },
+    "t-gl": {
+      "kind": "title1",
+      "maxW": 4320,
+      "page": "admin",
+      "text": "Admin global — mode terang",
+      "w": 240,
+      "x": 0,
+      "y": 5140
+    },
+    "t-hp": {
+      "kind": "title1",
+      "maxW": 2400,
+      "page": "audiens",
+      "text": "Input di HP — terkirim, diblokir, offline",
+      "w": 240,
+      "x": 0,
+      "y": 3060
+    },
+    "t-in": {
+      "kind": "title1",
+      "maxW": 4960,
+      "page": "audiens",
+      "text": "Input kiosk di tablet — 4 tema",
+      "w": 240,
+      "x": 0,
+      "y": 1880
+    },
+    "t-pw": {
+      "kind": "title1",
+      "maxW": 4000,
+      "page": "audiens",
+      "text": "Photowall 16:9 ke infocus — hanya kata, tanpa UI",
+      "w": 240,
+      "x": 0,
+      "y": -280
+    },
+    "t-pw2": {
+      "kind": "title1",
+      "maxW": 2640,
+      "page": "audiens",
+      "text": "Skala otomatis: dari 6 kata sampai 300 kata",
+      "w": 240,
+      "x": 0,
+      "y": 800
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Photowall-Putih.dc.html",
+    "Photowall-Foto.dc.html",
+    "Photowall-Awal.dc.html",
+    "Photowall-Penuh.dc.html",
+    "Input-Reggae.dc.html",
+    "Input-Hitam.dc.html",
+    "Input-Putih.dc.html",
+    "Input-Foto.dc.html",
+    "Input-HP-Terkirim.dc.html",
+    "Input-HP-Ditolak.dc.html",
+    "Input-HP-Offline.dc.html",
+    "Admin-Sesi-Live.dc.html",
+    "Admin-Sesi-Tema.dc.html",
+    "Admin-Sesi-Dashboard.dc.html",
+    "Admin-Sesi-HP.dc.html",
+    "Admin-Sesi-Blocklist.dc.html",
+    "Admin-Sesi-Live-Light.dc.html",
+    "Admin-Sesi-Tema-Light.dc.html",
+    "Admin-Sesi-Dashboard-Light.dc.html",
+    "Admin-Sesi-HP-Light.dc.html",
+    "Admin-Sesi-Blocklist-Light.dc.html",
+    "Admin-Global-Login.dc.html",
+    "Admin-Global.dc.html",
+    "Admin-Global-Blocklist.dc.html",
+    "Admin-Global-Login-Light.dc.html",
+    "Admin-Global-Light.dc.html",
+    "Admin-Global-Blocklist-Light.dc.html",
+    "Landing.dc.html",
+    "Create.dc.html",
+    "Siap-Tayang.dc.html",
+    "Join-HP.dc.html",
+    "Masuk-Admin-HP.dc.html",
+    "Landing-Light.dc.html",
+    "Create-Light.dc.html",
+    "Siap-Tayang-Light.dc.html",
+    "Join-HP-Light.dc.html",
+    "Masuk-Admin-HP-Light.dc.html",
+    "Join-Desktop.dc.html",
+    "Join-Tablet.dc.html",
+    "Masuk-Admin-Desktop.dc.html",
+    "Masuk-Admin-Tablet.dc.html",
+    "Join-Desktop-Light.dc.html",
+    "Join-Tablet-Light.dc.html",
+    "Masuk-Admin-Desktop-Light.dc.html",
+    "Masuk-Admin-Tablet-Light.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "audiens",
+      "name": "Audiens: Photowall & Input"
+    },
+    {
+      "id": "crew",
+      "name": "Crew: Landing sampai Siap tayang"
+    },
+    {
+      "id": "admin",
+      "name": "Admin sesi & Admin global"
+    }
+  ],
+  "title": "Wordcloud Photowall — UI Design"
+}

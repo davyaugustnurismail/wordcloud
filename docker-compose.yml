@@ -1,0 +1,47 @@
+services:
+  db:
+    image: postgres:17-alpine
+    environment:
+      POSTGRES_DB: wordcloud
+      POSTGRES_USER: wordcloud
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-wordcloud}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wordcloud"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "127.0.0.1:6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+  app:
+    profiles: ["app"]
+    build: .
+    env_file: .env
+    environment:
+      NODE_ENV: production
+      DATABASE_URL: postgres://wordcloud:${DB_PASSWORD:-wordcloud}@db:5432/wordcloud
+      REDIS_URL: redis://redis:6379
+      UPLOAD_DIR: /data/uploads
+      ALLOW_LAN_ORIGINS: "true"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./data/uploads:/data/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+
+volumes:
+  pgdata:
