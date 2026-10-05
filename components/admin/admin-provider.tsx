@@ -13,9 +13,12 @@ import {
 } from "react";
 import { connectRealtime, type RealtimeClient } from "@/lib/realtime/client";
 import type { AdminAck, AdminEntryDto, ControlAction, PresencePayload, SessionState } from "@/lib/realtime/events";
-import type { SessionSettings } from "@/lib/settings";
+import type { SessionSettings, SettingsPatch } from "@/lib/settings";
 
 const ACK_TIMEOUT_MS = 5000;
+const PATCH_DEBOUNCE_MS = 200;
+
+export type SaveState = "idle" | "saving" | "saved" | "error";
 
 type AckEmitter = {
   timeout(ms: number): {
@@ -46,6 +49,8 @@ type AdminContextValue = {
   clearConfirm: boolean;
   setClearConfirm: (open: boolean) => void;
   actions: AdminActions;
+  patchSettings: (patch: SettingsPatch, immediate?: boolean) => void;
+  saveState: SaveState;
 };
 
 const AdminContext = createContext<AdminContextValue | null>(null);
@@ -85,7 +90,11 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
   const [presence, setPresence] = useState<PresencePayload>({ display: 0, input: 0, admin: 0 });
   const [entries, setEntries] = useState<AdminEntryDto[]>([]);
   const [clearConfirm, setClearConfirm] = useState(false);
+  const [saveState, setSaveState] = useState<SaveState>("idle");
   const socketRef = useRef<RealtimeClient | null>(null);
+  const confirmedSettingsRef = useRef(initialSettings);
+  const pendingPatchRef = useRef<SettingsPatch>({});
+  const patchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
 
   useEffect(() => {
     const socket = connectRealtime({ code, role: "admin" });
@@ -98,17 +107,22 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
       if (error.message === "unauthorized") router.replace(`/masuk-admin?kode=${code}`);
     });
     socket.on("admin:snapshot", (snapshot) => {
-      setSettings(snapshot.settings);
+      confirmedSettingsRef.current = snapshot.settings;
+      setSettings({ ...snapshot.settings, ...pendingPatchRef.current });
       setState(snapshot.state);
       setEntries([...snapshot.entries].sort(compareEntries));
       setReady(true);
     });
     socket.on("admin:entry", (entry) => setEntries((current) => upsertEntry(current, entry)));
     socket.on("session:state", setState);
-    socket.on("settings:update", setSettings);
+    socket.on("settings:update", (next) => {
+      confirmedSettingsRef.current = next;
+      setSettings({ ...next, ...pendingPatchRef.current });
+    });
     socket.on("presence", setPresence);
 
     return () => {
+      clearTimeout(patchTimerRef.current);
       socket.disconnect();
       socketRef.current = null;
     };
@@ -124,6 +138,35 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
       });
     });
   }, []);
+
+  const flushPatch = useCallback(async () => {
+    clearTimeout(patchTimerRef.current);
+    const patch = pendingPatchRef.current;
+    pendingPatchRef.current = {};
+    if (Object.keys(patch).length === 0) return;
+    setSaveState("saving");
+    const ack = await emit("settings:patch", patch);
+    if (ack.ok) {
+      setSaveState("saved");
+    } else {
+      setSaveState("error");
+      setSettings({ ...confirmedSettingsRef.current, ...pendingPatchRef.current });
+    }
+  }, [emit]);
+
+  const patchSettings = useCallback(
+    (patch: SettingsPatch, immediate = false) => {
+      pendingPatchRef.current = { ...pendingPatchRef.current, ...patch };
+      setSettings((current) => ({ ...current, ...patch }));
+      clearTimeout(patchTimerRef.current);
+      if (immediate) {
+        void flushPatch();
+      } else {
+        patchTimerRef.current = setTimeout(() => void flushPatch(), PATCH_DEBOUNCE_MS);
+      }
+    },
+    [flushPatch],
+  );
 
   const actions = useMemo<AdminActions>(
     () => ({
@@ -162,8 +205,24 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
       clearConfirm,
       setClearConfirm,
       actions,
+      patchSettings,
+      saveState,
     }),
-    [code, name, connected, ready, settings, state, presence, entries, deviceLabels, clearConfirm, actions],
+    [
+      code,
+      name,
+      connected,
+      ready,
+      settings,
+      state,
+      presence,
+      entries,
+      deviceLabels,
+      clearConfirm,
+      actions,
+      patchSettings,
+      saveState,
+    ],
   );
 
   return <AdminContext.Provider value={value}>{children}</AdminContext.Provider>;

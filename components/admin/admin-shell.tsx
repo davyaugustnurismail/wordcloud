@@ -3,7 +3,18 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
-import { BanIcon, FreezeIcon, PauseIcon, PhoneIcon, PlayIcon, ScreenIcon, ShieldIcon, TrashIcon, WifiOffIcon } from "../icons";
+import {
+  BanIcon,
+  FreezeIcon,
+  PauseIcon,
+  PhoneIcon,
+  PlayIcon,
+  ScreenIcon,
+  ShieldIcon,
+  SlidersIcon,
+  TrashIcon,
+  WifiOffIcon,
+} from "../icons";
 import { ThemeToggle } from "../theme-toggle";
 import { useAdmin } from "./admin-provider";
 
@@ -73,6 +84,7 @@ function Tabs() {
   const base = `/s/${code}/admin`;
   const tabs = [
     { href: base, label: "Live & moderasi" },
+    { href: `${base}/tema`, label: "Tema & tampilan" },
     { href: `${base}/blocklist`, label: "Blocklist" },
   ];
 
@@ -141,13 +153,15 @@ function ClearDialog() {
 function MobileNav() {
   const { code, connected, state, actions, setClearConfirm } = useAdmin();
   const pathname = usePathname();
-  const blocklistActive = pathname === `/s/${code}/admin/blocklist`;
+  const base = `/s/${code}/admin`;
+  const temaActive = pathname === `${base}/tema`;
+  const blocklistActive = pathname === `${base}/blocklist`;
   const item = "flex h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-xs font-bold disabled:opacity-50";
 
   return (
     <nav
       aria-label="Aksi cepat"
-      className="fixed inset-x-0 bottom-0 grid grid-cols-4 gap-1 border-t border-line bg-surface px-2.5 pb-3 pt-2 md:hidden"
+      className="fixed inset-x-0 bottom-0 grid grid-cols-5 gap-1 border-t border-line bg-surface px-2.5 pb-3 pt-2 md:hidden"
     >
       <button type="button" disabled={!connected} onClick={() => actions.control(state.paused ? "resume" : "pause")} className={item}>
         {state.paused ? <PlayIcon size={20} strokeWidth={2.2} /> : <PauseIcon size={20} strokeWidth={2.2} />}
@@ -158,11 +172,20 @@ function MobileNav() {
         {state.frozen ? "Cairkan" : "Freeze"}
       </button>
       <Link
-        href={blocklistActive ? `/s/${code}/admin` : `/s/${code}/admin/blocklist`}
+        href={temaActive ? base : `${base}/tema`}
+        aria-current={temaActive ? "page" : undefined}
+        className={`${item} ${temaActive ? "bg-surface2" : ""}`}
+      >
+        <SlidersIcon size={20} />
+        Tema
+      </Link>
+      <Link
+        href={blocklistActive ? base : `${base}/blocklist`}
+        aria-current={blocklistActive ? "page" : undefined}
         className={`${item} ${blocklistActive ? "bg-surface2" : ""}`}
       >
-        {blocklistActive ? <ScreenIcon size={20} /> : <BanIcon size={20} />}
-        {blocklistActive ? "Live" : "Blocklist"}
+        <BanIcon size={20} />
+        Blocklist
       </Link>
       <button type="button" disabled={!connected} onClick={() => setClearConfirm(true)} className={`${item} text-danger`}>
         <TrashIcon size={20} />

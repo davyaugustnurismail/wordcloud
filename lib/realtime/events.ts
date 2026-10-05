@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { SessionSettings } from "../settings";
+import type { SessionSettings, SettingsPatch } from "../settings";
 
 export const clientRoleSchema = z.enum(["display", "input", "ready", "admin"]);
 export type ClientRole = z.infer<typeof clientRoleSchema>;
@@ -90,5 +90,6 @@ export interface ClientToServerEvents {
   "entry:restore": (payload: z.infer<typeof entryIdPayloadSchema>, ack: (result: AdminAck) => void) => void;
   "entry:edit": (payload: z.infer<typeof editPayloadSchema>, ack: (result: AdminAck) => void) => void;
   "moderation:set": (payload: z.infer<typeof moderationPayloadSchema>, ack: (result: AdminAck) => void) => void;
+  "settings:patch": (payload: SettingsPatch, ack: (result: AdminAck) => void) => void;
   "session:control": (payload: z.infer<typeof controlPayloadSchema>, ack: (result: AdminAck) => void) => void;
 }

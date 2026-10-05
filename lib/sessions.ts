@@ -93,6 +93,12 @@ export async function checkSessionPin(code: string, pin: string): Promise<Sessio
   }
 }
 
+export async function updateSessionSettings(sessionId: string, settings: SessionSettings): Promise<SessionSettings> {
+  const [row] = await getDb().update(sessions).set({ settings }).where(eq(sessions.id, sessionId)).returning();
+  if (!row) throw new Error("Sesi tidak ditemukan");
+  return parseSettings(row.settings);
+}
+
 export async function setModerationMode(sessionId: string, mode: SessionSettings["moderationMode"]): Promise<SessionSettings> {
   const current = await findSessionById(sessionId);
   if (!current) throw new Error("Sesi tidak ditemukan");

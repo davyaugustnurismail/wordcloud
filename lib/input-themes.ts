@@ -1,6 +1,7 @@
 import type { InputTheme } from "./settings";
 
 export type InputThemeTokens = {
+  usesImage: boolean;
   background: string;
   text: string;
   helper: string;
@@ -15,6 +16,7 @@ export type InputThemeTokens = {
 
 export const inputThemeTokens: Record<InputTheme, InputThemeTokens> = {
   reggae: {
+    usesImage: false,
     background: "linear-gradient(to bottom, #D62F2F 0 33.34%, #F5C02E 33.34% 66.67%, #17924A 66.67% 100%)",
     text: "#0C0C0C",
     helper: "#0C0C0C",
@@ -27,6 +29,7 @@ export const inputThemeTokens: Record<InputTheme, InputThemeTokens> = {
     sent: { background: "#0C0C0C", color: "#FFFFFF", check: "#17924A" },
   },
   hitam: {
+    usesImage: false,
     background: "#000000",
     text: "#FFFFFF",
     helper: "#BDBDBD",
@@ -39,6 +42,7 @@ export const inputThemeTokens: Record<InputTheme, InputThemeTokens> = {
     sent: { background: "#FFFFFF", color: "#000000", check: "#17924A" },
   },
   putih: {
+    usesImage: false,
     background: "#FFFFFF",
     text: "#141416",
     helper: "#5B5B63",
@@ -49,5 +53,18 @@ export const inputThemeTokens: Record<InputTheme, InputThemeTokens> = {
     button: { background: "#141416", color: "#FFFFFF", disabledBackground: "#E7E6E0", disabledColor: "#6E6E74" },
     card: { background: "rgba(20,20,22,0.04)", border: "rgba(20,20,22,0.10)" },
     sent: { background: "#141416", color: "#FFFFFF", check: "#15803D" },
+  },
+  foto: {
+    usesImage: true,
+    background: "#000000",
+    text: "#FFFFFF",
+    helper: "#E6E6E6",
+    status: { text: "#E6E6E6", dot: "#3DDC84", chipBackground: null },
+    offline: { text: "#E6E6E6", dot: "#FF5A5A", chipBackground: null },
+    field: { background: "#FFFFFF", border: "#FFFFFF", text: "#0C0C0C", focusShadow: "0 0 0 8px rgba(255,255,255,0.18)" },
+    error: { ring: "#FF5A5A", text: "#FF8080" },
+    button: { background: "#FFE14D", color: "#0C0C0C", disabledBackground: "rgba(255,255,255,0.22)", disabledColor: "rgba(255,255,255,0.6)" },
+    card: { background: "rgba(10,10,12,0.45)", border: "rgba(255,255,255,0.14)" },
+    sent: { background: "#FFFFFF", color: "#000000", check: "#17924A" },
   },
 };

@@ -231,6 +231,25 @@ export function ClockIcon(props: IconProps) {
   );
 }
 
+export function SlidersIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12" />
+      <circle cx="16" cy="6" r="2" />
+      <circle cx="10" cy="12" r="2" />
+      <circle cx="18" cy="18" r="2" />
+    </Base>
+  );
+}
+
+export function UploadIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 16V5M7 10l5-5 5 5M5 20h14" />
+    </Base>
+  );
+}
+
 export function SpinnerIcon({ strokeWidth = 2.5, ...props }: IconProps) {
   return (
     <Base {...props} strokeWidth={strokeWidth} className={`animate-spin ${props.className ?? ""}`}>

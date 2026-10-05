@@ -1,6 +1,8 @@
+import { isAssetUsable } from "../assets";
 import { isTermBlocked } from "../blocklist";
 import { approveEntries, editEntry, hideEntry, rejectEntry, restoreEntry } from "../entries";
-import { applyControl, findSessionById, setModerationMode } from "../sessions";
+import { applyControl, findSessionById, setModerationMode, updateSessionSettings } from "../sessions";
+import { sessionSettingsSchema, settingsPatchSchema } from "../settings";
 import { checkWord, normalizeWord } from "../words";
 import {
   approvePayloadSchema,
@@ -116,6 +118,26 @@ export function registerAdminHandlers(io: RealtimeServer, socket: RealtimeSocket
       if (!parsed.success) return invalid;
       const settings = await setModerationMode(sessionId, parsed.data.mode);
       io.to(sessionRoom(sessionId)).to(adminRoom(sessionId)).emit("settings:update", settings);
+      return ok;
+    }),
+  );
+
+  socket.on("settings:patch", (payload, ack) =>
+    respond(ack, async () => {
+      if (!isAdmin()) return forbidden;
+      const parsed = settingsPatchSchema.safeParse(payload);
+      if (!parsed.success) return invalid;
+      const patch = parsed.data;
+      const session = await findSessionById(sessionId);
+      if (!session) return notFound;
+
+      if (patch.photowallBgId && !(await isAssetUsable(patch.photowallBgId, sessionId, "photowall_bg"))) return notFound;
+      if (patch.inputBgId && !(await isAssetUsable(patch.inputBgId, sessionId, "input_bg"))) return notFound;
+
+      const merged = sessionSettingsSchema.safeParse({ ...session.settings, ...patch });
+      if (!merged.success) return invalid;
+      const saved = await updateSessionSettings(sessionId, merged.data);
+      io.to(sessionRoom(sessionId)).to(adminRoom(sessionId)).emit("settings:update", saved);
       return ok;
     }),
   );

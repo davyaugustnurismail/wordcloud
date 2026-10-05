@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { inputThemeTokens } from "@/lib/input-themes";
 import { connectRealtime, getDeviceId, type RealtimeClient } from "@/lib/realtime/client";
-import type { SessionSettings } from "@/lib/settings";
+import { assetUrl, type SessionSettings } from "@/lib/settings";
 import { checkWord, countChars, hasInnerSpace, stripWord } from "@/lib/words";
 import { AlertCircleIcon, CheckIcon, SpinnerIcon, WifiOffIcon } from "./icons";
 
@@ -128,11 +128,24 @@ export function InputKiosk({ code, initialSettings }: Props) {
   } as CSSProperties;
 
   return (
-    <div className="flex min-h-dvh flex-col" style={{ background: theme.background, color: theme.text }}>
+    <div className="relative flex min-h-dvh flex-col overflow-hidden" style={{ background: theme.background, color: theme.text }}>
+      {theme.usesImage ? (
+        <>
+          {settings.inputBgId ? (
+            <img
+              src={assetUrl(settings.inputBgId)}
+              alt=""
+              className="absolute inset-0 h-full w-full object-cover"
+              draggable={false}
+            />
+          ) : null}
+          <div className="absolute inset-0 bg-black/55" />
+        </>
+      ) : null}
       {!connected ? (
         <div
           role="status"
-          className="flex items-center gap-2.5 px-[22px] py-3.5 text-sm font-bold md:px-14 md:text-base"
+          className="relative flex items-center gap-2.5 px-[22px] py-3.5 text-sm font-bold md:px-14 md:text-base"
           style={{ background: "#FFF1DC", color: "#7A3E00" }}
         >
           <WifiOffIcon size={20} />
@@ -140,7 +153,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
         </div>
       ) : null}
 
-      <div className="flex flex-1 flex-col px-[22px] pt-6 md:px-14 md:pt-10">
+      <div className="relative flex flex-1 flex-col px-[22px] pt-6 md:px-14 md:pt-10">
         <div className="flex items-center justify-end">
           <div
             className={`flex items-center gap-1.5 text-[13px] font-semibold md:gap-2 md:text-[15px] ${

@@ -6,6 +6,7 @@ import { AlertCircleIcon, CheckIcon, FreezeIcon, PauseIcon, PlayIcon, TrashIcon 
 import { useAdmin } from "./admin-provider";
 import { failureMessage } from "./feedback";
 import { FeedPanel } from "./feed-panel";
+import { LivePreview } from "./live-preview";
 import { PendingPanel } from "./pending-panel";
 import { StatTiles } from "./stat-tiles";
 
@@ -151,6 +152,7 @@ export function LiveModeration() {
           <FeedPanel report={report} />
         </div>
         <aside className="hidden min-w-0 flex-[1_1_400px] flex-col gap-5 md:flex">
+          <LivePreview />
           <StatTiles />
         </aside>
       </div>
