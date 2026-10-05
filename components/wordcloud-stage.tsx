@@ -3,7 +3,8 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { assetUrl, type PhotowallFont, type SessionSettings } from "@/lib/settings";
 import { cssFontFamily, fontSpecs } from "@/lib/wordcloud/fonts";
-import { computeLayout, type PlacedWord } from "@/lib/wordcloud/layout";
+import type { PlacedWord } from "@/lib/wordcloud/layout";
+import { createLayoutRunner, type LayoutRunner } from "@/lib/wordcloud/layout-runner";
 import { loadWordFont, measureInk } from "@/lib/wordcloud/measure";
 import { paletteFor, photowallBackground, pickWordColor } from "@/lib/wordcloud/palette";
 import { applyCase } from "@/lib/wordcloud/text";
@@ -40,6 +41,7 @@ type Pose = { x: number; y: number; fs: number };
 const MOVE_MS = 700;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const MIN_MOVE_PX = 0.5;
+const ANIMATED_RANKS = 400;
 
 export function WordcloudStage({
   entries,
@@ -56,6 +58,7 @@ export function WordcloudStage({
   const [loadedFont, setLoadedFont] = useState<PhotowallFont | null>(null);
   const [placed, setPlaced] = useState<PlacedWord[]>([]);
 
+  const runnerRef = useRef<LayoutRunner | null>(null);
   const nodesRef = useRef(new Map<string, HTMLElement>());
   const previousRef = useRef(new Map<string, Pose>());
   const initialLayoutRef = useRef(true);
@@ -91,7 +94,17 @@ export function WordcloudStage({
   }, [font]);
 
   useEffect(() => {
-    if (!fontReady || size.w === 0 || size.h === 0) return;
+    const runner = createLayoutRunner();
+    runnerRef.current = runner;
+    return () => {
+      runner.dispose();
+      runnerRef.current = null;
+    };
+  }, []);
+
+  useEffect(() => {
+    const runner = runnerRef.current;
+    if (!runner || !fontReady || size.w === 0 || size.h === 0) return;
     if (frozen && placedCountRef.current > 0) return;
     const frame = requestAnimationFrame(() => {
       const words = entries.slice(0, maxWords).map((entry) => {
@@ -100,14 +113,14 @@ export function WordcloudStage({
       });
       const key = [size.w, size.h, font, k, minRatio, safePct, maxPct].join("|");
       const hint = hintRef.current.key === key ? hintRef.current.scale : undefined;
-      const result = computeLayout(
-        words,
-        { width: size.w, height: size.h, k, minRatio, safePct, maxPct },
-        hint,
-      );
-      hintRef.current = { key, scale: result.scale };
-      placedCountRef.current = result.placed.length;
-      setPlaced(result.placed);
+      void runner
+        .run({ words, params: { width: size.w, height: size.h, k, minRatio, safePct, maxPct }, hint })
+        .then((result) => {
+          if (!result) return;
+          hintRef.current = { key, scale: result.scale };
+          placedCountRef.current = result.placed.length;
+          setPlaced(result.placed);
+        });
     });
     return () => cancelAnimationFrame(frame);
   }, [entries, size, fontReady, frozen, font, caseStyle, k, minRatio, maxPct, safePct, maxWords]);
@@ -120,7 +133,7 @@ export function WordcloudStage({
     for (const word of placed) {
       next.set(word.id, { x: word.x, y: word.y, fs: word.fs });
       const node = nodesRef.current.get(word.id);
-      if (!node || !shouldAnimate) continue;
+      if (!node || !shouldAnimate || word.rank >= ANIMATED_RANKS) continue;
 
       const target = `translate(${word.x}px, ${word.y}px) scale(1)`;
       const running = node.getAnimations();

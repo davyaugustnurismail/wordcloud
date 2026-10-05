@@ -10,11 +10,15 @@ type Props = {
   report: (ack: AdminAck) => void;
 };
 
+const PENDING_LIMIT = 200;
+
 export function PendingPanel({ pending, report }: Props) {
   const { actions, deviceLabels, connected } = useAdmin();
 
   const approve = async (ids: string[]) => report(await actions.approve(ids));
   const reject = async (id: string) => report(await actions.reject(id));
+  const shown = pending.slice(0, PENDING_LIMIT);
+  const truncated = pending.length > shown.length;
 
   return (
     <section aria-label="Menunggu approve" className="overflow-hidden rounded-2xl border-2 border-warn bg-surface md:rounded-[18px]">
@@ -31,15 +35,15 @@ export function PendingPanel({ pending, report }: Props) {
         <button
           type="button"
           disabled={!connected || pending.length === 0}
-          onClick={() => approve(pending.map((entry) => entry.id))}
+          onClick={() => approve(shown.map((entry) => entry.id))}
           className="flex h-10 items-center gap-2 rounded-[10px] bg-primary px-3 text-[13px] font-extrabold text-on-primary disabled:opacity-50 md:h-11 md:rounded-xl md:px-4 md:text-sm"
         >
           <CheckIcon size={18} strokeWidth={2.6} className="hidden md:block" />
-          Setujui semua
+          {truncated ? `Setujui ${shown.length} teratas` : "Setujui semua"}
         </button>
       </div>
       {pending.length === 0 ? <div className="p-5 text-sm text-muted">Tidak ada kata yang menunggu.</div> : null}
-      {pending.map((entry) => (
+      {shown.map((entry) => (
         <div
           key={entry.id}
           className="flex items-center justify-between gap-3 border-t border-line px-3.5 py-2.5 md:px-5 md:py-3"
@@ -74,6 +78,11 @@ export function PendingPanel({ pending, report }: Props) {
           </div>
         </div>
       ))}
+      {truncated ? (
+        <div role="status" className="border-t border-line bg-warn/10 px-3.5 py-3 text-[13px] font-bold md:px-5">
+          Menampilkan {shown.length} kata terbaru dari {pending.length} yang menunggu. Setujui atau tolak dulu agar sisanya muncul.
+        </div>
+      ) : null}
     </section>
   );
 }

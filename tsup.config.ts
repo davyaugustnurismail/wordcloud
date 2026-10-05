@@ -4,6 +4,7 @@ export default defineConfig({
   entry: {
     server: "server.ts",
     migrate: "lib/db/migrate.ts",
+    hash: "scripts/hash-password.ts",
   },
   format: ["esm"],
   platform: "node",

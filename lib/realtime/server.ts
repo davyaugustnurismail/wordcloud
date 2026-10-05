@@ -7,8 +7,9 @@ import { parseCookieHeader } from "../auth/cookies";
 import { openReadyToken, readyCookieName } from "../auth/ready-cookie";
 import { isValidCode, normalizeCode } from "../code";
 import { getEnv } from "../env";
-import { getRedis } from "../redis";
-import { findSessionByCode } from "../sessions";
+import { resolveClientIp } from "../http";
+import { createAdapterClients } from "../redis";
+import { findSessionByCode, type SessionRecord } from "../sessions";
 import { handshakeAuthSchema } from "./events";
 import { onConnection } from "./connection";
 import { isOriginAllowed } from "./origin";
@@ -18,6 +19,16 @@ export type { RealtimeServer } from "./types";
 
 const KEY = Symbol.for("wordcloud.io");
 type Holder = typeof globalThis & { [KEY]?: RealtimeServer };
+
+const lookups = new Map<string, Promise<SessionRecord | null>>();
+
+function lookupSession(code: string): Promise<SessionRecord | null> {
+  const pending = lookups.get(code);
+  if (pending) return pending;
+  const started = findSessionByCode(code).finally(() => lookups.delete(code));
+  lookups.set(code, started);
+  return started;
+}
 
 export function getIO(): RealtimeServer {
   const io = (globalThis as Holder)[KEY];
@@ -33,14 +44,16 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
     transports: ["websocket"],
     serveClient: false,
     destroyUpgrade: false,
+    pingInterval: 10_000,
+    pingTimeout: 10_000,
+    connectTimeout: 10_000,
+    maxHttpBufferSize: 16 * 1024,
     allowRequest: (req, callback) => {
       callback(null, isOriginAllowed(req.headers.origin, policy));
     },
   });
 
-  const pub = getRedis();
-  const sub = pub.duplicate();
-  sub.on("error", (err) => console.error(`[redis:sub] ${err.message}`));
+  const { pub, sub } = createAdapterClients();
   io.adapter(createAdapter(pub, sub));
 
   io.use(async (socket, next) => {
@@ -49,7 +62,7 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
       if (!parsed.success) return next(new Error("invalid_auth"));
 
       const code = normalizeCode(parsed.data.code);
-      const session = isValidCode(code) ? await findSessionByCode(code) : null;
+      const session = isValidCode(code) ? await lookupSession(code) : null;
       if (!session) return next(new Error("session_not_found"));
 
       const cookies = parseCookieHeader(socket.handshake.headers.cookie);
@@ -68,7 +81,7 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
         session,
         role: parsed.data.role,
         deviceId: parsed.data.deviceId ?? null,
-        ip: socket.handshake.address,
+        ip: resolveClientIp(socket.handshake.address, socket.handshake.headers, env.TRUST_PROXY),
       };
       next();
     } catch (err) {

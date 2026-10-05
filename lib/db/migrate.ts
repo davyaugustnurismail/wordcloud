@@ -1,5 +1,6 @@
 import "../load-env";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { getEnv } from "../env";
 import { getDb, getPool } from "./index";
 
 const MAX_ATTEMPTS = 30;
@@ -18,6 +19,7 @@ async function waitForDatabase() {
 }
 
 async function main() {
+  getEnv();
   await waitForDatabase();
   await migrate(getDb(), { migrationsFolder: "drizzle" });
   console.log("[migrate] migrasi selesai");

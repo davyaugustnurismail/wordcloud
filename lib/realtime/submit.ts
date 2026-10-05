@@ -1,5 +1,5 @@
-import { isTermBlocked } from "../blocklist";
-import { insertEntry } from "../entries";
+import { insertEntryUnlessBlocked } from "../entries";
+import { measure } from "../metrics";
 import { hitRateLimit } from "../rate-limit";
 import { findSessionById } from "../sessions";
 import { checkWord, normalizeWord } from "../words";
@@ -16,14 +16,12 @@ export async function handleSubmit(io: RealtimeServer, socket: RealtimeSocket, p
   const parsed = submitPayloadSchema.safeParse(payload);
   if (!parsed.success) return { status: "rejected", reason: "invalid" };
 
-  const limit = await hitRateLimit(
-    `submit:${socket.data.ip}:${socket.data.deviceId ?? socket.id}`,
-    SUBMIT_LIMIT,
-    SUBMIT_WINDOW_SEC,
+  const limit = await measure("submit.ratelimit", () =>
+    hitRateLimit(`submit:${socket.data.ip}:${socket.data.deviceId ?? socket.id}`, SUBMIT_LIMIT, SUBMIT_WINDOW_SEC),
   );
   if (!limit.allowed) return { status: "rejected", reason: "rate_limited" };
 
-  const session = await findSessionById(socket.data.session.id);
+  const session = await measure("submit.session", () => findSessionById(socket.data.session.id));
   if (!session) return { status: "rejected", reason: "invalid" };
   if (session.state.ended) return { status: "rejected", reason: "ended" };
   if (session.state.paused) return { status: "rejected", reason: "paused" };
@@ -32,16 +30,17 @@ export async function handleSubmit(io: RealtimeServer, socket: RealtimeSocket, p
   if (!checked.ok) return { status: "rejected", reason: checked.reason === "space" ? "space" : "invalid" };
 
   const normalized = normalizeWord(checked.text);
-  if (await isTermBlocked(session.id, normalized)) return { status: "rejected", reason: "blocked" };
-
   const approve = session.settings.moderationMode === "approve";
-  const row = await insertEntry({
-    sessionId: session.id,
-    text: checked.text,
-    normalized,
-    deviceId: socket.data.deviceId,
-    status: approve ? "pending" : "visible",
-  });
+  const row = await measure("submit.insert", () =>
+    insertEntryUnlessBlocked({
+      sessionId: session.id,
+      text: checked.text,
+      normalized,
+      deviceId: socket.data.deviceId,
+      status: approve ? "pending" : "visible",
+    }),
+  );
+  if (!row) return { status: "rejected", reason: "blocked" };
 
   if (!approve) publishShown(io, session.id, row);
   publishAdminEntry(io, session.id, row);

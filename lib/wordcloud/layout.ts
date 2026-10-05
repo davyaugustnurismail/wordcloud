@@ -234,7 +234,10 @@ export function computeLayout(
       low *= shrink;
       fit = tryFit(low);
     }
-    if (!fit) return { scale: low, placed: attempt(low, true) ?? [] };
+    if (!fit) {
+      const dense = Math.min(low, floor / minRatio);
+      return { scale: dense, placed: attempt(dense, true) ?? [] };
+    }
     return bisect(fit, high, rounds);
   };
 

@@ -15,7 +15,8 @@
     "db:migrate": "tsx lib/db/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "hash": "tsx scripts/hash-password.ts",
-    "check:socket": "tsx scripts/check-socket.ts"
+    "check:socket": "tsx scripts/check-socket.ts",
+    "loadtest": "tsx scripts/load-test.ts"
   },
   "dependencies": {
     "@socket.io/redis-adapter": "^8.3.0",

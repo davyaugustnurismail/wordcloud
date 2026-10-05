@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getPool } from "@/lib/db";
+import { summarizeMetrics } from "@/lib/metrics";
 import { getRedis } from "@/lib/redis";
 
 export const dynamic = "force-dynamic";
@@ -31,7 +32,7 @@ export async function GET() {
 
   const healthy = db === "ok" && redis === "ok";
   return NextResponse.json(
-    { status: healthy ? "ok" : "degraded", server: "ok", db, redis },
+    { status: healthy ? "ok" : "degraded", server: "ok", db, redis, uptimeSec: Math.round(process.uptime()), metrics: summarizeMetrics() },
     { status: healthy ? 200 : 503, headers: { "Cache-Control": "no-store" } },
   );
 }

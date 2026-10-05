@@ -13,7 +13,15 @@ function connect() {
   const existing = holder[KEY];
   if (existing) return existing;
 
-  const pool = new pg.Pool({ connectionString: getEnv().DATABASE_URL, max: 10 });
+  const env = getEnv();
+  const pool = new pg.Pool({
+    connectionString: env.DATABASE_URL,
+    max: env.DB_POOL_MAX,
+    connectionTimeoutMillis: 3000,
+    idleTimeoutMillis: 30_000,
+    statement_timeout: 15_000,
+    keepAlive: true,
+  });
   pool.on("error", (err) => console.error(`[db] ${err.message}`));
 
   const created = { pool, db: drizzle(pool, { schema }) };

@@ -75,6 +75,51 @@ export async function insertEntry(input: {
   return row;
 }
 
+type InsertedEntryRow = {
+  id: string;
+  session_id: string;
+  text: string;
+  normalized: string;
+  status: EntryRow["status"];
+  created_ms: number;
+  shown_ms: number | null;
+  device_id: string | null;
+};
+
+export async function insertEntryUnlessBlocked(input: {
+  sessionId: string;
+  text: string;
+  normalized: string;
+  deviceId: string | null;
+  status: "visible" | "pending";
+}): Promise<EntryRow | null> {
+  const shownAt = input.status === "visible" ? new Date() : null;
+  const result = await getDb().execute<InsertedEntryRow>(sql`
+    insert into entries (session_id, text, normalized, status, shown_at, device_id)
+    select ${input.sessionId}::uuid, ${input.text}::text, ${input.normalized}::text, ${input.status}::entry_status, ${shownAt}::timestamptz, ${input.deviceId}::text
+    where not exists (
+      select 1 from blocked_terms b
+      where b.term = ${input.normalized}::text and (b.session_id is null or b.session_id = ${input.sessionId}::uuid)
+    )
+    returning id, session_id, text, normalized, status,
+      (extract(epoch from created_at) * 1000)::float8 as created_ms,
+      (extract(epoch from shown_at) * 1000)::float8 as shown_ms,
+      device_id
+  `);
+  const row = result.rows[0];
+  if (!row) return null;
+  return {
+    id: row.id,
+    sessionId: row.session_id,
+    text: row.text,
+    normalized: row.normalized,
+    status: row.status,
+    createdAt: new Date(Number(row.created_ms)),
+    shownAt: row.shown_ms === null ? null : new Date(Number(row.shown_ms)),
+    deviceId: row.device_id,
+  };
+}
+
 export async function approveEntries(sessionId: string, ids: string[], actor: string): Promise<EntryRow[]> {
   const pending = await getDb()
     .select()

@@ -5,12 +5,37 @@ import type { ClientToServerEvents, HandshakeAuth, ServerToClientEvents } from "
 
 export type RealtimeClient = Socket<ServerToClientEvents, ClientToServerEvents>;
 
+const RETRY_STEP_MS = 1000;
+const RETRY_MAX_MS = 5000;
+
 export function connectRealtime(auth: HandshakeAuth): RealtimeClient {
-  return io({
+  const socket: RealtimeClient = io({
     transports: ["websocket"],
     auth,
     reconnectionDelayMax: 3000,
   });
+
+  let attempts = 0;
+  let retryTimer: ReturnType<typeof setTimeout> | undefined;
+
+  socket.on("connect", () => {
+    attempts = 0;
+  });
+
+  socket.on("connect_error", (error) => {
+    if (socket.active || error.message !== "server_error") return;
+    clearTimeout(retryTimer);
+    attempts++;
+    retryTimer = setTimeout(() => socket.connect(), Math.min(RETRY_STEP_MS * attempts, RETRY_MAX_MS));
+  });
+
+  const disconnect = socket.disconnect.bind(socket);
+  socket.disconnect = () => {
+    clearTimeout(retryTimer);
+    return disconnect();
+  };
+
+  return socket;
 }
 
 const DEVICE_KEY = "wc-device";

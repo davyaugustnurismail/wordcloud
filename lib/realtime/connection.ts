@@ -1,4 +1,5 @@
 import { listAdminEntries, listVisibleEntries } from "../entries";
+import { recordDuration } from "../metrics";
 import { registerAdminHandlers } from "./moderation";
 import { schedulePresence } from "./presence";
 import { adminRoom, displayRoom, sessionRoom } from "./rooms";
@@ -38,12 +39,14 @@ export async function onConnection(io: RealtimeServer, socket: RealtimeSocket): 
 
   socket.on("entry:submit", (payload, ack) => {
     if (typeof ack !== "function") return;
+    const startedAt = performance.now();
     handleSubmit(io, socket, payload)
       .then(ack)
       .catch((err: Error) => {
         console.error(`[submit] ${err.message}`);
         ack({ status: "rejected", reason: "error" });
-      });
+      })
+      .finally(() => recordDuration("submit", performance.now() - startedAt));
   });
 
   if (role === "admin") registerAdminHandlers(io, socket);

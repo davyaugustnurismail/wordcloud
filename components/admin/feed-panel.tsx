@@ -153,13 +153,14 @@ export function FeedPanel({ report }: { report: (ack: AdminAck) => void }) {
       null,
     [feed, clearedAt],
   );
-  const shown = useMemo(
+  const matching = useMemo(
     () =>
-      feed
-        .filter((entry) => (filter === "tampil" ? entry.status === "visible" : filter === "sembunyi" ? entry.status === "hidden" : true))
-        .slice(0, FEED_LIMIT),
+      feed.filter((entry) =>
+        filter === "tampil" ? entry.status === "visible" : filter === "sembunyi" ? entry.status === "hidden" : true,
+      ),
     [feed, filter],
   );
+  const shown = useMemo(() => matching.slice(0, FEED_LIMIT), [matching]);
 
   return (
     <section aria-label="Live feed" className="overflow-hidden rounded-2xl border border-line bg-surface md:rounded-[18px]">
@@ -200,6 +201,11 @@ export function FeedPanel({ report }: { report: (ack: AdminAck) => void }) {
           report={report}
         />
       ))}
+      {matching.length > shown.length ? (
+        <div role="status" className="border-t border-line px-3.5 py-3 text-[13px] text-muted md:px-5">
+          Menampilkan {shown.length} kata terbaru dari {matching.length}. Seluruhnya tetap ada di database dan bisa diunduh.
+        </div>
+      ) : null}
     </section>
   );
 }

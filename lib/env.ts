@@ -9,6 +9,7 @@ const schema = z.object({
   HOST: z.string().min(1).default("0.0.0.0"),
   PORT: z.coerce.number().int().positive().default(3000),
   DATABASE_URL: z.string().min(1),
+  DB_POOL_MAX: z.coerce.number().int().min(2).max(80).default(20),
   REDIS_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET minimal 32 karakter"),
   ADMIN_PASSWORD_HASH: z.string().min(1).transform(decodeHash),
@@ -16,10 +17,12 @@ const schema = z.object({
   PUBLIC_URL: z.url().default("http://localhost:3000"),
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
   ALLOW_LAN_ORIGINS: z.enum(["true", "false"]).optional(),
+  TRUST_PROXY: z.enum(["true", "false"]).optional(),
 });
 
-export type Env = Omit<z.infer<typeof schema>, "ALLOW_LAN_ORIGINS"> & {
+export type Env = Omit<z.infer<typeof schema>, "ALLOW_LAN_ORIGINS" | "TRUST_PROXY"> & {
   ALLOW_LAN_ORIGINS: boolean;
+  TRUST_PROXY: boolean;
 };
 
 let cached: Env | undefined;
@@ -35,10 +38,11 @@ export function getEnv(): Env {
     throw new Error(`Environment tidak valid. Salin .env.example ke .env lalu isi:\n${detail}`);
   }
 
-  const { ALLOW_LAN_ORIGINS, ...rest } = parsed.data;
+  const { ALLOW_LAN_ORIGINS, TRUST_PROXY, ...rest } = parsed.data;
   cached = {
     ...rest,
     ALLOW_LAN_ORIGINS: ALLOW_LAN_ORIGINS ? ALLOW_LAN_ORIGINS === "true" : rest.NODE_ENV !== "production",
+    TRUST_PROXY: TRUST_PROXY === "true",
   };
   return cached;
 }
