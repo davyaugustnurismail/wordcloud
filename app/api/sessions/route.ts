@@ -6,12 +6,33 @@ import { clientIp } from "@/lib/http";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { getSessionDefaults, verifyCreatorPassword } from "@/lib/app-settings";
 import { createSession, updateSessionSettings } from "@/lib/sessions";
-import { defaultSettings, inputThemes, moderationModes, photowallThemes } from "@/lib/settings";
+import {
+  defaultSettings,
+  hexColor,
+  inputBoxStyles,
+  inputThemes,
+  MAX_PALETTE_COLORS,
+  moderationModes,
+  photowallThemes,
+} from "@/lib/settings";
 import { isUploadedFile, prepareImage, storeImage, UploadError } from "@/lib/uploads";
 
 export const dynamic = "force-dynamic";
 
-const optionalId = z.preprocess((value) => (value === "" ? undefined : value), z.uuid().optional());
+const blankToUndefined = (value: unknown) => (value === "" ? undefined : value);
+
+const optionalId = z.preprocess(blankToUndefined, z.uuid().optional());
+const optionalColor = z.preprocess(blankToUndefined, hexColor.optional());
+const optionalOverlay = z.preprocess(blankToUndefined, z.coerce.number().int().min(0).max(85).optional());
+const optionalPalette = z.preprocess((value) => {
+  if (value === "" || value === undefined) return undefined;
+  if (typeof value !== "string") return value;
+  try {
+    return JSON.parse(value);
+  } catch {
+    return null;
+  }
+}, z.array(hexColor).min(1).max(MAX_PALETTE_COLORS).optional());
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(60),
@@ -21,9 +42,24 @@ const createSchema = z.object({
   inputTheme: z.enum(inputThemes),
   photowallBgId: optionalId,
   inputBgId: optionalId,
+  photowallColor: optionalColor,
+  inputColor: optionalColor,
+  photowallOverlay: optionalOverlay,
+  inputOverlay: optionalOverlay,
+  palette: optionalPalette,
+  inputBoxStyle: z.preprocess(blankToUndefined, z.enum(inputBoxStyles).optional()),
+  inputTextColor: optionalColor,
+  inputFieldColor: optionalColor,
+  inputFieldTextColor: optionalColor,
+  inputBorderColor: optionalColor,
+  inputButtonColor: optionalColor,
   prompt: z.string().trim().min(1).max(80),
   maxChars: z.coerce.number().int().min(3).max(40),
 });
+
+function definedOnly<T extends Record<string, unknown>>(value: T): Partial<T> {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== undefined)) as Partial<T>;
+}
 
 function fail(error: string, status: number, headers?: HeadersInit) {
   return NextResponse.json({ error }, { status, headers });
@@ -69,6 +105,19 @@ export async function POST(request: Request) {
     cardBlur: rest.inputTheme === "foto",
     photowallBgId: photowallBgId ?? null,
     inputBgId: inputBgId ?? null,
+    ...definedOnly({
+      photowallColor: rest.photowallColor,
+      inputColor: rest.inputColor,
+      photowallOverlay: rest.photowallOverlay,
+      inputOverlay: rest.inputOverlay,
+      palette: rest.palette,
+      inputBoxStyle: rest.inputBoxStyle,
+      inputTextColor: rest.inputTextColor,
+      inputFieldColor: rest.inputFieldColor,
+      inputFieldTextColor: rest.inputFieldTextColor,
+      inputBorderColor: rest.inputBorderColor,
+      inputButtonColor: rest.inputButtonColor,
+    }),
   };
 
   const { session, pin } = await createSession({ name: rest.name, settings });

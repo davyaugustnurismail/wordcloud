@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
-import { inputThemeTokens } from "@/lib/input-themes";
+import { resolveInputTheme } from "@/lib/input-themes";
 import { connectRealtime, getDeviceId, type RealtimeClient } from "@/lib/realtime/client";
 import { assetUrl, type SessionSettings } from "@/lib/settings";
 import { checkWord, countChars, hasInnerSpace, stripWord } from "@/lib/words";
@@ -70,7 +70,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
     };
   }, [code]);
 
-  const theme = inputThemeTokens[settings.inputTheme];
+  const theme = resolveInputTheme(settings);
   const trimmed = value.trim();
   const blocked = paused || ended;
   const disabled = !connected || blocked || submitting || !trimmed || error === "space";
@@ -130,7 +130,9 @@ export function InputKiosk({ code, initialSettings }: Props) {
   const fieldStyle = {
     background: theme.field.background,
     borderColor: showError && !blocked ? theme.error.ring : theme.field.border,
+    borderWidth: theme.box.borderWidth,
     color: theme.field.text,
+    "--rest-shadow": theme.fieldShadow ?? "none",
     "--focus-shadow": theme.field.focusShadow,
   } as CSSProperties;
 
@@ -146,7 +148,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
               draggable={false}
             />
           ) : null}
-          <div className="absolute inset-0 bg-black/55" />
+          <div className="absolute inset-0" style={{ background: `rgba(0, 0, 0, ${settings.inputOverlay / 100})` }} />
         </>
       ) : null}
       {!connected ? (
@@ -225,7 +227,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
                   enterKeyHint="send"
                   aria-describedby="bantu"
                   aria-invalid={showError ? true : undefined}
-                  className="box-border h-[76px] w-full rounded-[18px] border-4 px-[18px] text-center font-display text-[34px] font-extrabold placeholder:text-[#6E6E74] focus:outline-none focus:shadow-[var(--focus-shadow)] md:h-[116px] md:rounded-[22px] md:px-7 md:text-[56px]"
+                  className={`box-border h-[76px] w-full px-[18px] text-center font-display text-[34px] font-extrabold placeholder:text-[#6E6E74] shadow-[var(--rest-shadow)] focus:outline-none focus:shadow-[var(--focus-shadow)] md:h-[116px] md:px-7 md:text-[56px] ${theme.box.fieldRadiusClass}`}
                   style={fieldStyle}
                 />
                 <div className="flex min-h-7 items-center justify-between gap-4">
@@ -248,12 +250,13 @@ export function InputKiosk({ code, initialSettings }: Props) {
                 <button
                   type="submit"
                   disabled={disabled}
-                  className={`flex h-[68px] items-center justify-center gap-2.5 rounded-[18px] border-0 font-extrabold md:h-24 md:rounded-[22px] ${
-                    connected ? "font-display text-[30px] md:text-[42px]" : "font-sans text-xl"
-                  }`}
+                  className={`flex h-[68px] items-center justify-center gap-2.5 border-0 font-extrabold md:h-24 ${
+                    theme.box.buttonRadiusClass
+                  } ${connected ? "font-display text-[30px] md:text-[42px]" : "font-sans text-xl"}`}
                   style={{
                     background: disabled ? theme.button.disabledBackground : theme.button.background,
                     color: disabled ? theme.button.disabledColor : theme.button.color,
+                    boxShadow: theme.buttonShadow ?? undefined,
                   }}
                 >
                   {connected ? (

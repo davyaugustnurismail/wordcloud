@@ -5,7 +5,7 @@ import { assetUrl, type PhotowallFont, type SessionSettings } from "@/lib/settin
 import { cssFontFamily, fontSpecs } from "@/lib/wordcloud/fonts";
 import { computeLayout, type PlacedWord } from "@/lib/wordcloud/layout";
 import { loadWordFont, measureInk } from "@/lib/wordcloud/measure";
-import { paletteFor, photowallBackgrounds, pickWordColor } from "@/lib/wordcloud/palette";
+import { paletteFor, photowallBackground, pickWordColor } from "@/lib/wordcloud/palette";
 import { applyCase } from "@/lib/wordcloud/text";
 
 export type StageEntry = { id: string; text: string };
@@ -14,6 +14,7 @@ export type StageSettings = Pick<
   SessionSettings,
   | "photowallTheme"
   | "photowallBgId"
+  | "photowallColor"
   | "photowallOverlay"
   | "photowallFont"
   | "palette"
@@ -28,6 +29,7 @@ export type StageSettings = Pick<
 type Props = {
   entries: readonly StageEntry[];
   settings: StageSettings;
+  backgroundUrl?: string | null;
   frozen?: boolean;
   animate?: boolean;
   className?: string;
@@ -39,7 +41,14 @@ const MOVE_MS = 700;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const MIN_MOVE_PX = 0.5;
 
-export function WordcloudStage({ entries, settings, frozen = false, animate = true, className = "" }: Props) {
+export function WordcloudStage({
+  entries,
+  settings,
+  backgroundUrl,
+  frozen = false,
+  animate = true,
+  className = "",
+}: Props) {
   const { photowallFont: font, caseStyle, k, minRatio, maxPct, safePct, maxWords } = settings;
 
   const containerRef = useRef<HTMLDivElement>(null);
@@ -56,8 +65,8 @@ export function WordcloudStage({ entries, settings, frozen = false, animate = tr
   const liveIds = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
   const visibleWords = useMemo(() => placed.filter((word) => liveIds.has(word.id)), [placed, liveIds]);
   const palette = useMemo(
-    () => paletteFor(settings.photowallTheme, settings.palette),
-    [settings.photowallTheme, settings.palette],
+    () => paletteFor(settings.photowallTheme, settings.palette, settings.photowallColor),
+    [settings.photowallTheme, settings.palette, settings.photowallColor],
   );
   const fontReady = loadedFont === font;
 
@@ -154,18 +163,19 @@ export function WordcloudStage({ entries, settings, frozen = false, animate = tr
   }, [placed, animate]);
 
   const theme = settings.photowallTheme;
+  const imageUrl = backgroundUrl ?? (settings.photowallBgId ? assetUrl(settings.photowallBgId) : null);
 
   return (
     <div
       ref={containerRef}
       className={`relative overflow-hidden ${className}`}
-      style={{ background: photowallBackgrounds[theme], fontFamily: cssFontFamily(font) }}
+      style={{ background: photowallBackground(theme, settings.photowallColor), fontFamily: cssFontFamily(font) }}
     >
       {theme === "foto" ? (
         <>
-          {settings.photowallBgId ? (
+          {imageUrl ? (
             <img
-              src={assetUrl(settings.photowallBgId)}
+              src={imageUrl}
               alt=""
               className="absolute inset-0 h-full w-full object-cover"
               draggable={false}

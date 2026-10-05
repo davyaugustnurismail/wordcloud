@@ -1,25 +1,28 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
+import { readableOn } from "@/lib/color";
 import { demoEntries } from "@/lib/demo-words";
 import { checkImageFile } from "@/lib/image-file";
+import { baseTokensFor, inputBoxSpecs } from "@/lib/input-themes";
 import { uploadSessionImage, type UploadKind } from "@/lib/upload-client";
 import {
   assetUrl,
   caseStyles,
   inputThemes,
-  MAX_PALETTE_COLORS,
   photowallFonts,
   photowallThemes,
   type CaseStyle,
   type InputTheme,
   type PhotowallFont,
   type PhotowallTheme,
+  type SessionSettings,
 } from "@/lib/settings";
 import { fontSpecs } from "@/lib/wordcloud/fonts";
-import { defaultPalettes } from "@/lib/wordcloud/palette";
+import { paletteFor, photowallBackground } from "@/lib/wordcloud/palette";
 import { BackgroundPicker } from "../background-picker";
-import { CheckIcon, PlusIcon, XIcon } from "../icons";
+import { CheckIcon } from "../icons";
+import { BoxStyleField, ColorField, PaletteField } from "../theme-controls";
 import { useAdmin } from "./admin-provider";
 import { InputPreview } from "./input-preview";
 import { PhotowallPreview } from "./photowall-preview";
@@ -33,17 +36,29 @@ type Props = {
   own: AssetLists;
 };
 
-const photowallSwatches: Record<PhotowallTheme, { label: string; background: string; word: string }> = {
-  hitam: { label: "Hitam", background: "#000000", word: "#FFE14D" },
-  putih: { label: "Putih", background: "#FFFFFF", word: "#0B2E8A" },
-  foto: { label: "Foto", background: "#000000", word: "#FFFFFF" },
+const photowallLabels: Record<PhotowallTheme, string> = { hitam: "Hitam", putih: "Putih", foto: "Foto", warna: "Warna" };
+const inputLabels: Record<InputTheme, string> = {
+  reggae: "Reggae",
+  hitam: "Hitam",
+  putih: "Putih",
+  foto: "Foto",
+  warna: "Warna",
 };
 
-const inputSwatches: Record<InputTheme, { label: string; background: string; field: string; fieldBorder: string }> = {
-  reggae: { label: "Reggae", background: "#0C0C0C", field: "#FFFFFF", fieldBorder: "#0C0C0C" },
-  hitam: { label: "Hitam", background: "#000000", field: "#141416", fieldBorder: "#FFE14D" },
-  putih: { label: "Putih", background: "#FFFFFF", field: "#F6F5F1", fieldBorder: "#141416" },
-  foto: { label: "Foto", background: "#000000", field: "#FFFFFF", fieldBorder: "#FFFFFF" },
+const photowallSwatchWord: Record<Exclude<PhotowallTheme, "warna">, string> = {
+  hitam: "#FFE14D",
+  putih: "#0B2E8A",
+  foto: "#FFFFFF",
+};
+
+const inputSwatches: Record<
+  Exclude<InputTheme, "warna">,
+  { background: string; field: string; fieldBorder: string }
+> = {
+  reggae: { background: "#0C0C0C", field: "#FFFFFF", fieldBorder: "#0C0C0C" },
+  hitam: { background: "#000000", field: "#141416", fieldBorder: "#FFE14D" },
+  putih: { background: "#FFFFFF", field: "#F6F5F1", fieldBorder: "#141416" },
+  foto: { background: "#000000", field: "#FFFFFF", fieldBorder: "#FFFFFF" },
 };
 
 const caseLabels: Record<CaseStyle, string> = { kecil: "kecil", asli: "Asli", kapital: "KAPITAL" };
@@ -66,71 +81,13 @@ function SaveIndicator() {
   );
 }
 
-function PaletteEditor() {
-  const { settings, patchSettings } = useAdmin();
-  const [editing, setEditing] = useState(false);
-  const colors = settings.palette ?? defaultPalettes[settings.photowallTheme];
-
-  const update = (next: string[]) => patchSettings({ palette: next });
-
-  return (
-    <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
-      <span className="text-sm font-bold">Palet warna</span>
-      <div className="flex flex-wrap items-center gap-1.5">
-        {colors.map((color, index) =>
-          editing ? (
-            <span key={index} className="relative">
-              <input
-                type="color"
-                value={color.toLowerCase()}
-                aria-label={`Warna ${index + 1}`}
-                onChange={(event) => update(colors.map((existing, i) => (i === index ? event.target.value : existing)))}
-                className="h-[30px] w-[30px] cursor-pointer rounded-lg border border-line bg-transparent p-0"
-              />
-              {colors.length > 1 ? (
-                <button
-                  type="button"
-                  aria-label={`Hapus warna ${index + 1}`}
-                  onClick={() => update(colors.filter((_, i) => i !== index))}
-                  className="absolute -right-1.5 -top-1.5 flex h-4 w-4 items-center justify-center rounded-full bg-danger-solid text-white"
-                >
-                  <XIcon size={10} strokeWidth={3} />
-                </button>
-              ) : null}
-            </span>
-          ) : (
-            <span key={index} className="h-[30px] w-[30px] rounded-lg border border-line" style={{ background: color }} />
-          ),
-        )}
-        {editing && colors.length < MAX_PALETTE_COLORS ? (
-          <button
-            type="button"
-            aria-label="Tambah warna"
-            onClick={() => update([...colors, "#ffffff"])}
-            className="flex h-[30px] w-[30px] items-center justify-center rounded-lg border border-dashed border-line-strong text-muted"
-          >
-            <PlusIcon size={16} />
-          </button>
-        ) : null}
-        <button
-          type="button"
-          aria-pressed={editing}
-          onClick={() => setEditing((value) => !value)}
-          className="ml-1.5 h-8 rounded-lg border border-line bg-transparent px-3 text-[13px] font-bold text-fg"
-        >
-          {editing ? "Selesai" : "Ubah"}
-        </button>
-        {editing && settings.palette ? (
-          <button
-            type="button"
-            onClick={() => patchSettings({ palette: null }, true)}
-            className="h-8 rounded-lg border border-line bg-transparent px-3 text-[13px] font-bold text-muted"
-          >
-            Reset ke bawaan
-          </button>
-        ) : null}
-      </div>
-    </div>
+function hasInputColorOverride(settings: SessionSettings): boolean {
+  return Boolean(
+    settings.inputTextColor ||
+      settings.inputFieldColor ||
+      settings.inputFieldTextColor ||
+      settings.inputBorderColor ||
+      settings.inputButtonColor,
   );
 }
 
@@ -146,6 +103,8 @@ export function ThemeSettings({ code, library, own }: Props) {
   const photowallIds = useMemo(() => [...library.photowall, ...uploaded.photowall], [library.photowall, uploaded.photowall]);
   const inputIds = useMemo(() => [...library.input, ...uploaded.input], [library.input, uploaded.input]);
   const preview = useMemo(() => demoEntries(140, "bahagia", 7), []);
+  const baseInput = baseTokensFor(settings);
+  const boxSpec = inputBoxSpecs[settings.inputBoxStyle];
 
   useEffect(() => {
     if (document.activeElement !== promptRef.current) setPromptDraft(settings.prompt);
@@ -185,6 +144,7 @@ export function ThemeSettings({ code, library, own }: Props) {
 
   const photowallFoto = settings.photowallBgId ? assetUrl(settings.photowallBgId) : null;
   const inputFoto = settings.inputBgId ? assetUrl(settings.inputBgId) : null;
+  const wallColorWord = paletteFor("warna", settings.palette, settings.photowallColor)[0] ?? "#FFFFFF";
 
   return (
     <main className="flex flex-1 flex-wrap items-start gap-6 px-4 py-4 md:px-8 md:pb-12 md:pt-6">
@@ -194,38 +154,51 @@ export function ThemeSettings({ code, library, own }: Props) {
             <span className="text-sm font-bold">Tema</span>
             <div className="flex flex-wrap gap-2.5">
               {photowallThemes.map((theme) => {
-                const swatch = photowallSwatches[theme];
                 const selected = settings.photowallTheme === theme;
+                const background = photowallBackground(theme, settings.photowallColor);
+                const word = theme === "warna" ? wallColorWord : photowallSwatchWord[theme];
                 return (
                   <button
                     key={theme}
                     type="button"
                     aria-pressed={selected}
                     onClick={() => pickPhotowallTheme(theme)}
-                    className={`${themeCardClass(selected)} flex-[1_1_150px]`}
+                    className={`${themeCardClass(selected)} flex-[1_1_130px]`}
                   >
                     <span
                       className="relative block h-[70px] overflow-hidden rounded-[9px] border border-line"
-                      style={{ background: swatch.background }}
+                      style={{ background }}
                     >
                       {theme === "foto" && photowallFoto ? (
                         <img src={photowallFoto} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" />
                       ) : null}
                       <span
                         className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 font-display text-[26px] font-extrabold leading-none"
-                        style={{ color: swatch.word }}
+                        style={{ color: word }}
                       >
                         seru
                       </span>
                     </span>
-                    <span className="px-1 pb-0.5 text-sm font-extrabold">{swatch.label}</span>
+                    <span className="px-1 pb-0.5 text-sm font-extrabold">{photowallLabels[theme]}</span>
                   </button>
                 );
               })}
             </div>
             <span className="text-[13px] leading-normal text-muted">
-              Hitam paling cocok untuk infocus. Putih dan Foto menyinari badan orang yang berfoto.
+              Hitam paling cocok untuk infocus. Putih, Foto, dan Warna terang menyinari badan orang yang berfoto.
             </span>
+          </div>
+
+          <div className="flex flex-wrap gap-5">
+            <div className="min-w-0 flex-[1_1_280px]">
+              <ColorField
+                id="warna-photowall"
+                label="Warna latar photowall (tema Warna)"
+                value={settings.photowallColor}
+                fallback={settings.photowallColor}
+                onChange={(hex) => patchSettings({ photowallColor: hex })}
+              />
+            </div>
           </div>
 
           <div className="flex flex-wrap gap-5">
@@ -262,7 +235,14 @@ export function ThemeSettings({ code, library, own }: Props) {
           </div>
 
           <div className="flex flex-wrap gap-5">
-            <PaletteEditor />
+            <div className="min-w-0 flex-[1_1_320px]">
+              <PaletteField
+                theme={settings.photowallTheme}
+                color={settings.photowallColor}
+                palette={settings.palette}
+                onChange={(next) => patchSettings({ palette: next }, true)}
+              />
+            </div>
             <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-2.5">
               <label htmlFor="font" className="text-sm font-bold">
                 Font
@@ -372,7 +352,14 @@ export function ThemeSettings({ code, library, own }: Props) {
             <span className="text-sm font-bold">Tema</span>
             <div className="flex flex-wrap gap-2.5">
               {inputThemes.map((theme) => {
-                const swatch = inputSwatches[theme];
+                const swatch =
+                  theme === "warna"
+                    ? {
+                        background: settings.inputColor,
+                        field: "#FFFFFF",
+                        fieldBorder: readableOn(settings.inputColor),
+                      }
+                    : inputSwatches[theme];
                 const selected = settings.inputTheme === theme;
                 return (
                   <button
@@ -380,7 +367,7 @@ export function ThemeSettings({ code, library, own }: Props) {
                     type="button"
                     aria-pressed={selected}
                     onClick={() => pickInputTheme(theme)}
-                    className={`${themeCardClass(selected)} flex-[1_1_120px]`}
+                    className={`${themeCardClass(selected)} flex-[1_1_110px]`}
                   >
                     <span
                       className="relative flex h-14 flex-col overflow-hidden rounded-[9px] border border-line"
@@ -401,29 +388,137 @@ export function ThemeSettings({ code, library, own }: Props) {
                         style={{ background: swatch.field, borderColor: swatch.fieldBorder }}
                       />
                     </span>
-                    <span className="px-1 pb-0.5 text-sm font-extrabold">{swatch.label}</span>
+                    <span className="px-1 pb-0.5 text-sm font-extrabold">{inputLabels[theme]}</span>
                   </button>
                 );
               })}
             </div>
           </div>
 
-          <div className="flex flex-col gap-2.5">
-            <span className="text-sm font-bold">Gambar latar input (tema Foto)</span>
-            <BackgroundPicker
-              ids={inputIds}
-              selectedId={settings.inputBgId}
-              size="md"
-              ariaSubject="input"
-              uploadLabel="Upload foto latar input"
-              uploading={uploading === "input_bg"}
-              error={inputBgError}
-              onSelectId={(id) => {
-                setInputBgError(null);
-                patchSettings({ inputBgId: id }, true);
-              }}
-              onPickFile={(file) => upload("input_bg", file)}
+          <div className="min-w-0 sm:max-w-[360px]">
+            <ColorField
+              id="warna-input"
+              label="Warna latar input (tema Warna)"
+              value={settings.inputColor}
+              fallback={settings.inputColor}
+              onChange={(hex) => patchSettings({ inputColor: hex })}
             />
+          </div>
+
+          <div className="flex flex-wrap gap-5">
+            <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
+              <span className="text-sm font-bold">Gambar latar input (tema Foto)</span>
+              <BackgroundPicker
+                ids={inputIds}
+                selectedId={settings.inputBgId}
+                size="md"
+                ariaSubject="input"
+                uploadLabel="Upload foto latar input"
+                uploading={uploading === "input_bg"}
+                error={inputBgError}
+                onSelectId={(id) => {
+                  setInputBgError(null);
+                  patchSettings({ inputBgId: id }, true);
+                }}
+                onPickFile={(file) => upload("input_bg", file)}
+              />
+            </div>
+            <div className="min-w-0 flex-[1_1_220px]">
+              <RangeField
+                id="overlay-input"
+                label="Overlay gelap input"
+                display={`${settings.inputOverlay}%`}
+                min={0}
+                max={85}
+                step={5}
+                value={settings.inputOverlay}
+                onChange={(value) => patchSettings({ inputOverlay: value })}
+              />
+            </div>
+          </div>
+
+          <BoxStyleField
+            value={settings.inputBoxStyle}
+            sample={{
+              background: baseInput.background,
+              field: settings.inputFieldColor ?? baseInput.field.background,
+              border: settings.inputBorderColor ?? baseInput.field.border,
+              text: settings.inputTextColor ?? baseInput.text,
+            }}
+            onChange={(style) => patchSettings({ inputBoxStyle: style }, true)}
+          />
+
+          <div className="flex flex-col gap-3.5">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-sm font-bold">Warna tulisan dan kotak</span>
+              {hasInputColorOverride(settings) ? (
+                <button
+                  type="button"
+                  onClick={() =>
+                    patchSettings(
+                      {
+                        inputTextColor: null,
+                        inputFieldColor: null,
+                        inputFieldTextColor: null,
+                        inputBorderColor: null,
+                        inputButtonColor: null,
+                      },
+                      true,
+                    )
+                  }
+                  className="h-8 rounded-lg border border-line bg-transparent px-3 text-[13px] font-bold text-muted"
+                >
+                  Reset semua ke otomatis
+                </button>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-6 gap-y-4">
+              <ColorField
+                id="warna-teks-input"
+                label="Judul dan teks bantuan"
+                value={settings.inputTextColor}
+                fallback={baseInput.text}
+                onChange={(hex) => patchSettings({ inputTextColor: hex })}
+                onReset={() => patchSettings({ inputTextColor: null }, true)}
+              />
+              {boxSpec.transparentField ? null : (
+                <ColorField
+                  id="warna-isi-kotak"
+                  label="Isi kotak input"
+                  value={settings.inputFieldColor}
+                  fallback={baseInput.field.background}
+                  onChange={(hex) => patchSettings({ inputFieldColor: hex })}
+                  onReset={() => patchSettings({ inputFieldColor: null }, true)}
+                />
+              )}
+              <ColorField
+                id="warna-tulisan-kotak"
+                label="Tulisan di dalam kotak"
+                value={settings.inputFieldTextColor}
+                fallback={baseInput.field.text}
+                onChange={(hex) => patchSettings({ inputFieldTextColor: hex })}
+                onReset={() => patchSettings({ inputFieldTextColor: null }, true)}
+              />
+              <ColorField
+                id="warna-garis-kotak"
+                label="Garis kotak input"
+                value={settings.inputBorderColor}
+                fallback={baseInput.field.border}
+                onChange={(hex) => patchSettings({ inputBorderColor: hex })}
+                onReset={() => patchSettings({ inputBorderColor: null }, true)}
+              />
+              <ColorField
+                id="warna-tombol"
+                label="Tombol Kirim"
+                value={settings.inputButtonColor}
+                fallback={baseInput.button.background}
+                onChange={(hex) => patchSettings({ inputButtonColor: hex })}
+                onReset={() => patchSettings({ inputButtonColor: null }, true)}
+              />
+            </div>
+            {boxSpec.transparentField ? (
+              <span className="text-xs text-muted">Jenis kotak ini tanpa isi, jadi hanya garisnya yang berwarna.</span>
+            ) : null}
           </div>
 
           <div className="flex flex-wrap gap-5">
@@ -468,7 +563,7 @@ export function ThemeSettings({ code, library, own }: Props) {
         </SettingsCard>
       </div>
 
-      <aside className="flex min-w-0 flex-[1_1_500px] flex-col gap-5">
+      <aside className="flex min-w-0 flex-[1_1_500px] flex-col gap-5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh/var(--zoom,1)-2rem)] lg:overflow-y-auto">
         <section className="flex flex-col gap-3 rounded-[18px] border border-line bg-surface p-[18px]">
           <div className="flex items-center justify-between">
             <span className="text-[17px] font-extrabold">Preview photowall</span>

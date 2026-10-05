@@ -2,37 +2,72 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
+import { demoEntries } from "@/lib/demo-words";
 import { checkImageFile } from "@/lib/image-file";
+import { readableOn } from "@/lib/color";
+import { baseTokensFor, inputBoxSpecs } from "@/lib/input-themes";
 import {
   assetUrl,
+  DEFAULT_INPUT_COLOR,
+  DEFAULT_PHOTOWALL_COLOR,
   DEFAULT_PROMPT,
+  defaultSettings,
+  type InputBoxStyle,
   type InputTheme,
   type ModerationMode,
   type PhotowallTheme,
   type SessionDefaults,
+  type SessionSettings,
 } from "@/lib/settings";
+import { paletteFor, photowallBackground } from "@/lib/wordcloud/palette";
+import { InputPreview } from "./admin/input-preview";
+import { PhotowallPreview } from "./admin/photowall-preview";
+import { RangeField } from "./admin/settings-fields";
 import { BackgroundPicker } from "./background-picker";
 import { AlertCircleIcon, ArrowRightIcon, CheckIcon, ChevronLeftIcon, LockIcon, SpinnerIcon } from "./icons";
+import { BoxStyleField, ColorField, PaletteField } from "./theme-controls";
 
 type Library = { photowall: string[]; input: string[] };
 
 type Background = { type: "library"; id: string } | { type: "file"; file: File; url: string } | null;
 
-type PhotowallOption = {
-  id: PhotowallTheme;
-  label: string;
-  background: string;
-  words: [string, string, string];
+type InputColors = {
+  text: string | null;
+  field: string | null;
+  fieldText: string | null;
+  border: string | null;
+  button: string | null;
 };
 
-type InputOption = {
-  id: InputTheme;
-  label: string;
-  background: string;
-  field: string;
-  fieldBorder: string;
-  bands: boolean;
+const NO_INPUT_COLORS: InputColors = { text: null, field: null, fieldText: null, border: null, button: null };
+
+const photowallThemeOptions: { id: PhotowallTheme; label: string }[] = [
+  { id: "hitam", label: "Hitam" },
+  { id: "putih", label: "Putih" },
+  { id: "foto", label: "Foto" },
+  { id: "warna", label: "Warna" },
+];
+
+const inputThemeOptions: { id: InputTheme; label: string }[] = [
+  { id: "reggae", label: "Reggae" },
+  { id: "hitam", label: "Hitam" },
+  { id: "putih", label: "Putih" },
+  { id: "foto", label: "Foto" },
+  { id: "warna", label: "Warna" },
+];
+
+const photowallSwatchWords: Record<Exclude<PhotowallTheme, "warna">, [string, string, string]> = {
+  hitam: ["#FFE14D", "#3DE0FF", "#FF4FAE"],
+  putih: ["#0B2E8A", "#B0125B", "#0A6B4C"],
+  foto: ["#FFFFFF", "#FFE14D", "#8BE9FF"],
+};
+
+const inputSwatches: Record<Exclude<InputTheme, "warna">, { background: string; field: string; fieldBorder: string }> = {
+  reggae: { background: "#0C0C0C", field: "#FFFFFF", fieldBorder: "#0C0C0C" },
+  hitam: { background: "#000000", field: "#141416", fieldBorder: "#FFE14D" },
+  putih: { background: "#FFFFFF", field: "#F6F5F1", fieldBorder: "#141416" },
+  foto: { background: "#000000", field: "#FFFFFF", fieldBorder: "#FFFFFF" },
 };
 
 const moderationOptions: { id: ModerationMode; label: string; description: string }[] = [
@@ -48,22 +83,11 @@ const moderationOptions: { id: ModerationMode; label: string; description: strin
   },
 ];
 
-const photowallOptions: PhotowallOption[] = [
-  { id: "hitam", label: "Hitam", background: "#000000", words: ["#FFE14D", "#3DE0FF", "#FF4FAE"] },
-  { id: "putih", label: "Putih", background: "#FFFFFF", words: ["#0B2E8A", "#B0125B", "#0A6B4C"] },
-  { id: "foto", label: "Foto", background: "#000000", words: ["#FFFFFF", "#FFE14D", "#8BE9FF"] },
-];
-
-const inputOptions: InputOption[] = [
-  { id: "reggae", label: "Reggae", background: "#0C0C0C", field: "#FFFFFF", fieldBorder: "#0C0C0C", bands: true },
-  { id: "hitam", label: "Hitam", background: "#000000", field: "#141416", fieldBorder: "#FFE14D", bands: false },
-  { id: "putih", label: "Putih", background: "#FFFFFF", field: "#F6F5F1", fieldBorder: "#141416", bands: false },
-  { id: "foto", label: "Foto", background: "#000000", field: "#FFFFFF", fieldBorder: "#FFFFFF", bands: false },
-];
-
 const fieldClass =
   "box-border h-[52px] w-full min-w-0 rounded-xl border border-line bg-field px-4 text-[17px] font-semibold text-fg focus:border-ring focus:outline-none";
 const sectionClass = "flex flex-col gap-4 rounded-[20px] border border-line bg-surface p-7";
+const previewDockClass =
+  "z-10 flex flex-col gap-2 border-y border-line bg-surface py-3 md:sticky md:top-3 md:shadow-[0_-12px_0_0_var(--surface)]";
 
 function optionClass(selected: boolean) {
   return `flex min-w-0 flex-col gap-2.5 rounded-2xl border-2 p-2.5 text-left ${
@@ -117,6 +141,13 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
   );
   const [photowallBgError, setPhotowallBgError] = useState<string | null>(null);
   const [inputBgError, setInputBgError] = useState<string | null>(null);
+  const [photowallColor, setPhotowallColor] = useState(DEFAULT_PHOTOWALL_COLOR);
+  const [inputColor, setInputColor] = useState(DEFAULT_INPUT_COLOR);
+  const [photowallOverlay, setPhotowallOverlay] = useState(45);
+  const [inputOverlay, setInputOverlay] = useState(55);
+  const [palette, setPalette] = useState<string[] | null>(null);
+  const [boxStyle, setBoxStyle] = useState<InputBoxStyle>("membulat");
+  const [inputColors, setInputColors] = useState<InputColors>(NO_INPUT_COLORS);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
   const [maxChars, setMaxChars] = useState(String(defaults.maxChars));
   const [submitting, setSubmitting] = useState(false);
@@ -163,6 +194,17 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
     body.set("inputTheme", inputTheme);
     body.set("prompt", prompt);
     body.set("maxChars", maxChars);
+    body.set("photowallColor", photowallColor);
+    body.set("inputColor", inputColor);
+    body.set("photowallOverlay", String(photowallOverlay));
+    body.set("inputOverlay", String(inputOverlay));
+    body.set("inputBoxStyle", boxStyle);
+    if (palette) body.set("palette", JSON.stringify(palette));
+    if (inputColors.text) body.set("inputTextColor", inputColors.text);
+    if (inputColors.field) body.set("inputFieldColor", inputColors.field);
+    if (inputColors.fieldText) body.set("inputFieldTextColor", inputColors.fieldText);
+    if (inputColors.border) body.set("inputBorderColor", inputColors.border);
+    if (inputColors.button) body.set("inputButtonColor", inputColors.button);
     if (photowallBg?.type === "file") body.set("photowallImage", photowallBg.file);
     else if (photowallBg) body.set("photowallBgId", photowallBg.id);
     if (inputBg?.type === "file") body.set("inputImage", inputBg.file);
@@ -185,6 +227,49 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
 
   const photowallPreviewUrl = backgroundUrl(photowallBg);
   const inputPreviewUrl = backgroundUrl(inputBg);
+  const previewEntries = useMemo(() => demoEntries(90, "bahagia", 7), []);
+  const baseInput = baseTokensFor({ inputTheme, inputColor });
+  const boxSpec = inputBoxSpecs[boxStyle];
+
+  const previewSettings = useMemo<SessionSettings>(() => {
+    const limit = Number(maxChars);
+    return {
+      ...defaultSettings(),
+      photowallTheme,
+      inputTheme,
+      photowallColor,
+      inputColor,
+      photowallOverlay,
+      inputOverlay,
+      palette,
+      inputBoxStyle: boxStyle,
+      inputTextColor: inputColors.text,
+      inputFieldColor: inputColors.field,
+      inputFieldTextColor: inputColors.fieldText,
+      inputBorderColor: inputColors.border,
+      inputButtonColor: inputColors.button,
+      prompt: prompt.trim() || DEFAULT_PROMPT,
+      maxChars: Number.isInteger(limit) && limit >= 3 && limit <= 40 ? limit : 20,
+      cardBlur: inputTheme === "foto",
+    };
+  }, [
+    photowallTheme,
+    inputTheme,
+    photowallColor,
+    inputColor,
+    photowallOverlay,
+    inputOverlay,
+    palette,
+    boxStyle,
+    inputColors,
+    prompt,
+    maxChars,
+  ]);
+
+  const setInputColorField = (key: keyof InputColors, value: string | null) =>
+    setInputColors((current) => ({ ...current, [key]: value }));
+  const hasInputColors = Object.values(inputColors).some(Boolean);
+  const wallWords = paletteFor("warna", palette, photowallColor);
 
   return (
     <main className="flex flex-1 justify-center px-6 pb-16 pt-10">
@@ -277,30 +362,34 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
             description="Hitam paling cocok untuk infocus: area hitam tidak memancarkan cahaya, jadi kata terlihat melayang."
           />
           <div className="flex flex-wrap gap-3">
-            {photowallOptions.map((option) => {
+            {photowallThemeOptions.map((option) => {
               const selected = option.id === photowallTheme;
+              const words =
+                option.id === "warna"
+                  ? [wallWords[0] ?? "#FFFFFF", wallWords[1] ?? "#FFFFFF", wallWords[2] ?? "#FFFFFF"]
+                  : photowallSwatchWords[option.id];
               return (
                 <button
                   key={option.id}
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setPhotowallTheme(option.id)}
-                  className={`${optionClass(selected)} flex-[1_1_180px]`}
+                  className={`${optionClass(selected)} flex-[1_1_130px]`}
                 >
                   <span
                     className="relative block h-24 overflow-hidden rounded-[10px] border border-line"
-                    style={{ background: option.background }}
+                    style={{ background: photowallBackground(option.id, photowallColor) }}
                   >
                     {option.id === "foto" && photowallPreviewUrl ? (
                       <img src={photowallPreviewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" />
                     ) : null}
                     <span className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center gap-1 font-display font-extrabold leading-none">
-                      <span className="text-[30px]" style={{ color: option.words[0] }}>
+                      <span className="text-[30px]" style={{ color: words[0] }}>
                         seru
                       </span>
                       <span className="flex gap-1.5 text-sm">
-                        <span style={{ color: option.words[1] }}>irie</span>
-                        <span style={{ color: option.words[2] }}>damai</span>
+                        <span style={{ color: words[1] }}>irie</span>
+                        <span style={{ color: words[2] }}>damai</span>
                       </span>
                     </span>
                   </span>
@@ -309,6 +398,29 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               );
             })}
           </div>
+
+          <div className={previewDockClass}>
+            <span className="text-[13px] font-bold text-muted">Preview photowall</span>
+            <PhotowallPreview
+              entries={previewEntries}
+              settings={previewSettings}
+              backgroundUrl={photowallPreviewUrl}
+              animate={false}
+              compact
+            />
+          </div>
+
+          <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
+            <ColorField
+              id="warna-photowall"
+              label="Warna latar photowall"
+              value={photowallColor}
+              fallback={photowallColor}
+              onChange={setPhotowallColor}
+              hint="Dipakai saat tema Warna."
+            />
+          </div>
+
           <div className="flex flex-col gap-2.5 border-t border-line pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-1.5">
               <span className="text-[15px] font-bold">Gambar latar photowall</span>
@@ -328,27 +440,47 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               }}
               onPickFile={(file) => pickFile(file, setPhotowallBg, setPhotowallBgError)}
             />
+            <div className="sm:max-w-[360px]">
+              <RangeField
+                id="overlay-photowall"
+                label="Overlay gelap"
+                display={`${photowallOverlay}%`}
+                min={0}
+                max={85}
+                step={5}
+                value={photowallOverlay}
+                onChange={setPhotowallOverlay}
+              />
+            </div>
+          </div>
+
+          <div className="border-t border-line pt-4">
+            <PaletteField theme={photowallTheme} color={photowallColor} palette={palette} onChange={setPalette} />
           </div>
         </section>
 
         <section className={sectionClass}>
           <SectionHeading title="Halaman input" description="Tampilan di device tempat audiens mengetik kata." />
           <div className="flex flex-wrap gap-3">
-            {inputOptions.map((option) => {
+            {inputThemeOptions.map((option) => {
               const selected = option.id === inputTheme;
+              const swatch =
+                option.id === "warna"
+                  ? { background: inputColor, field: "#FFFFFF", fieldBorder: readableOn(inputColor) }
+                  : inputSwatches[option.id];
               return (
                 <button
                   key={option.id}
                   type="button"
                   aria-pressed={selected}
                   onClick={() => setInputTheme(option.id)}
-                  className={`${optionClass(selected)} flex-[1_1_140px]`}
+                  className={`${optionClass(selected)} flex-[1_1_110px]`}
                 >
                   <span
                     className="relative flex h-[76px] flex-col overflow-hidden rounded-[10px] border border-line"
-                    style={{ background: option.background }}
+                    style={{ background: swatch.background }}
                   >
-                    {option.bands ? (
+                    {option.id === "reggae" ? (
                       <>
                         <span className="grow bg-[#D62F2F]" />
                         <span className="grow bg-[#F5C02E]" />
@@ -360,7 +492,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
                     ) : null}
                     <span
                       className="absolute inset-x-3.5 top-1/2 h-[26px] -translate-y-1/2 rounded-[7px] border-2"
-                      style={{ background: option.field, borderColor: option.fieldBorder }}
+                      style={{ background: swatch.field, borderColor: swatch.fieldBorder }}
                     />
                   </span>
                   <OptionFooter label={option.label} selected={selected} />
@@ -368,7 +500,24 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               );
             })}
           </div>
-          <div className="flex flex-col gap-2.5">
+
+          <div className={previewDockClass}>
+            <span className="text-[13px] font-bold text-muted">Preview halaman input</span>
+            <InputPreview settings={previewSettings} backgroundUrl={inputPreviewUrl} scale={0.62} />
+          </div>
+
+          <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
+            <ColorField
+              id="warna-input"
+              label="Warna latar input"
+              value={inputColor}
+              fallback={inputColor}
+              onChange={setInputColor}
+              hint="Dipakai saat tema Warna."
+            />
+          </div>
+
+          <div className="flex flex-col gap-2.5 border-t border-line pt-4">
             <div className="flex flex-wrap items-baseline justify-between gap-1.5">
               <span className="text-[15px] font-bold">Gambar latar input</span>
               <span className="text-[13px] text-muted">Dipakai saat tema Foto.</span>
@@ -387,8 +536,96 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               }}
               onPickFile={(file) => pickFile(file, setInputBg, setInputBgError)}
             />
+            <div className="sm:max-w-[360px]">
+              <RangeField
+                id="overlay-input"
+                label="Overlay gelap input"
+                display={`${inputOverlay}%`}
+                min={0}
+                max={85}
+                step={5}
+                value={inputOverlay}
+                onChange={setInputOverlay}
+              />
+            </div>
           </div>
-          <div className="flex flex-wrap gap-5">
+
+          <div className="border-t border-line pt-4">
+            <BoxStyleField
+              value={boxStyle}
+              sample={{
+                background: baseInput.background,
+                field: inputColors.field ?? baseInput.field.background,
+                border: inputColors.border ?? baseInput.field.border,
+                text: inputColors.text ?? baseInput.text,
+              }}
+              onChange={setBoxStyle}
+            />
+          </div>
+
+          <div className="flex flex-col gap-3.5 border-t border-line pt-4">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <span className="text-[15px] font-bold">Warna tulisan dan kotak</span>
+              {hasInputColors ? (
+                <button
+                  type="button"
+                  onClick={() => setInputColors(NO_INPUT_COLORS)}
+                  className="h-8 rounded-lg border border-line bg-transparent px-3 text-[13px] font-bold text-muted"
+                >
+                  Reset semua ke otomatis
+                </button>
+              ) : null}
+            </div>
+            <div className="grid grid-cols-[repeat(auto-fit,minmax(240px,1fr))] gap-x-6 gap-y-4">
+              <ColorField
+                id="warna-teks-input"
+                label="Judul dan teks bantuan"
+                value={inputColors.text}
+                fallback={baseInput.text}
+                onChange={(hex) => setInputColorField("text", hex)}
+                onReset={() => setInputColorField("text", null)}
+              />
+              {boxSpec.transparentField ? null : (
+                <ColorField
+                  id="warna-isi-kotak"
+                  label="Isi kotak input"
+                  value={inputColors.field}
+                  fallback={baseInput.field.background}
+                  onChange={(hex) => setInputColorField("field", hex)}
+                  onReset={() => setInputColorField("field", null)}
+                />
+              )}
+              <ColorField
+                id="warna-tulisan-kotak"
+                label="Tulisan di dalam kotak"
+                value={inputColors.fieldText}
+                fallback={baseInput.field.text}
+                onChange={(hex) => setInputColorField("fieldText", hex)}
+                onReset={() => setInputColorField("fieldText", null)}
+              />
+              <ColorField
+                id="warna-garis-kotak"
+                label="Garis kotak input"
+                value={inputColors.border}
+                fallback={baseInput.field.border}
+                onChange={(hex) => setInputColorField("border", hex)}
+                onReset={() => setInputColorField("border", null)}
+              />
+              <ColorField
+                id="warna-tombol"
+                label="Tombol Kirim"
+                value={inputColors.button}
+                fallback={baseInput.button.background}
+                onChange={(hex) => setInputColorField("button", hex)}
+                onReset={() => setInputColorField("button", null)}
+              />
+            </div>
+            {boxSpec.transparentField ? (
+              <span className="text-xs text-muted">Jenis kotak ini tanpa isi, jadi hanya garisnya yang berwarna.</span>
+            ) : null}
+          </div>
+
+          <div className="flex flex-wrap gap-5 border-t border-line pt-4">
             <div className="flex min-w-0 flex-[999_1_300px] flex-col gap-2">
               <label htmlFor="ajakan" className="text-sm font-bold">
                 Kalimat ajakan

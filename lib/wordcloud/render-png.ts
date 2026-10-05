@@ -2,7 +2,7 @@ import { assetUrl, type SessionSettings } from "../settings";
 import { canvasFont } from "./fonts";
 import { computeLayout } from "./layout";
 import { loadWordFont, measureInk } from "./measure";
-import { paletteFor, photowallBackgrounds, pickWordColor } from "./palette";
+import { paletteFor, photowallBackground, pickWordColor } from "./palette";
 import { applyCase } from "./text";
 
 export const PNG_WIDTH = 3840;
@@ -14,6 +14,7 @@ type PngSettings = Pick<
   SessionSettings,
   | "photowallTheme"
   | "photowallBgId"
+  | "photowallColor"
   | "photowallOverlay"
   | "photowallFont"
   | "palette"
@@ -69,7 +70,7 @@ export async function renderWordcloudPng(
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas tidak tersedia");
 
-  context.fillStyle = photowallBackgrounds[settings.photowallTheme];
+  context.fillStyle = photowallBackground(settings.photowallTheme, settings.photowallColor);
   context.fillRect(0, 0, width, height);
 
   if (settings.photowallTheme === "foto") {
@@ -81,7 +82,7 @@ export async function renderWordcloudPng(
     context.fillRect(0, 0, width, height);
   }
 
-  const palette = paletteFor(settings.photowallTheme, settings.palette);
+  const palette = paletteFor(settings.photowallTheme, settings.palette, settings.photowallColor);
   context.textAlign = "left";
   context.textBaseline = "alphabetic";
   const metricsById = new Map(words.map((word) => [word.id, word.metrics]));
