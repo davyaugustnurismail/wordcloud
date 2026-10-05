@@ -1,4 +1,5 @@
 import {
+  boolean,
   index,
   jsonb,
   pgEnum,
@@ -24,6 +25,9 @@ export const sessions = pgTable("sessions", {
   pinHash: text("pin_hash").notNull(),
   status: sessionStatus("status").notNull().default("active"),
   settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
+  paused: boolean("paused").notNull().default(false),
+  frozen: boolean("frozen").notNull().default(false),
+  clearedAt: timestamp("cleared_at", { withTimezone: true }),
   createdAt: createdAt(),
   endedAt: timestamp("ended_at", { withTimezone: true }),
 });

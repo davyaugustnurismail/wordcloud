@@ -12,7 +12,8 @@ type Props = {
   initialSettings: SessionSettings;
 };
 
-type InputError = "space" | "blocked" | "rate_limited" | "error";
+type InputError = "space" | "blocked" | "rate_limited" | "paused" | "error";
+type SentKind = "shown" | "pending";
 
 const SENT_VISIBLE_MS = 1800;
 const ACK_TIMEOUT_MS = 5000;
@@ -21,7 +22,13 @@ const errorMessages: Record<InputError, string> = {
   space: "Cukup satu kata ya",
   blocked: "Coba kata lain ya",
   rate_limited: "Pelan-pelan ya, coba lagi sebentar",
+  paused: "Input sedang dijeda, tunggu sebentar.",
   error: "Gagal terkirim, coba lagi",
+};
+
+const sentMessages: Record<SentKind, string> = {
+  shown: "Terkirim — lihat layar!",
+  pending: "Terkirim — menunggu persetujuan",
 };
 
 export function InputKiosk({ code, initialSettings }: Props) {
@@ -29,7 +36,8 @@ export function InputKiosk({ code, initialSettings }: Props) {
   const [connected, setConnected] = useState(false);
   const [value, setValue] = useState("");
   const [error, setError] = useState<InputError | null>(null);
-  const [sent, setSent] = useState(false);
+  const [sent, setSent] = useState<SentKind | null>(null);
+  const [paused, setPaused] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const socketRef = useRef<RealtimeClient | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -42,7 +50,12 @@ export function InputKiosk({ code, initialSettings }: Props) {
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
     socket.on("connect_error", () => setConnected(false));
-    socket.on("snapshot", (snapshot) => setSettings(snapshot.settings));
+    socket.on("snapshot", (snapshot) => {
+      setSettings(snapshot.settings);
+      setPaused(snapshot.state.paused);
+    });
+    socket.on("settings:update", setSettings);
+    socket.on("session:state", (state) => setPaused(state.paused));
 
     return () => {
       clearTimeout(sentTimerRef.current);
@@ -53,19 +66,19 @@ export function InputKiosk({ code, initialSettings }: Props) {
 
   const theme = inputThemeTokens[settings.inputTheme];
   const trimmed = value.trim();
-  const disabled = !connected || submitting || !trimmed || error === "space";
+  const disabled = !connected || paused || submitting || !trimmed || error === "space";
 
   const onChange = (raw: string) => {
     const next = stripWord(raw, settings.maxChars);
     setValue(next);
     setError(hasInnerSpace(next) ? "space" : null);
-    setSent(false);
+    setSent(null);
   };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const socket = socketRef.current;
-    if (!socket || !connected || submitting) return;
+    if (!socket || !connected || paused || submitting) return;
 
     const checked = checkWord(value, settings.maxChars);
     if (!checked.ok) {
@@ -80,31 +93,36 @@ export function InputKiosk({ code, initialSettings }: Props) {
         setError("error");
         return;
       }
-      if (ack.status === "shown") {
+      if (ack.status !== "rejected") {
         setValue("");
         setError(null);
-        setSent(true);
+        setSent(ack.status);
         clearTimeout(sentTimerRef.current);
-        sentTimerRef.current = setTimeout(() => setSent(false), SENT_VISIBLE_MS);
+        sentTimerRef.current = setTimeout(() => setSent(null), SENT_VISIBLE_MS);
         inputRef.current?.focus();
         return;
       }
-      if (ack.reason === "blocked" || ack.reason === "space" || ack.reason === "rate_limited") {
-        setError(ack.reason);
-      } else {
+      if (ack.reason === "invalid") {
         setError("error");
+      } else {
+        setError(ack.reason);
       }
     });
   };
 
   const statusStyle = connected ? theme.status : theme.offline;
-  const message = !connected ? "Kata tidak hilang, tunggu sebentar." : error ? errorMessages[error] : "Cukup satu kata, tanpa spasi.";
-  const showError = connected && error !== null;
+  const showError = connected && (error !== null || paused);
+  const activeError: InputError | null = paused ? "paused" : error;
+  const message = !connected
+    ? "Kata tidak hilang, tunggu sebentar."
+    : activeError
+      ? errorMessages[activeError]
+      : "Cukup satu kata, tanpa spasi.";
   const blurOn = settings.cardBlur;
 
   const fieldStyle = {
     background: theme.field.background,
-    borderColor: error && connected ? theme.error.ring : theme.field.border,
+    borderColor: showError && !paused ? theme.error.ring : theme.field.border,
     color: theme.field.text,
     "--focus-shadow": theme.field.focusShadow,
   } as CSSProperties;
@@ -137,7 +155,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
 
         <div className="flex flex-1 items-center justify-center pb-14 md:pb-10">
           <div className="relative w-full max-w-[820px]">
-            {sent ? (
+            {sent !== null ? (
               <div
                 role="status"
                 className="absolute bottom-full left-1/2 mb-4 flex -translate-x-1/2 items-center gap-2 whitespace-nowrap rounded-full py-[9px] pl-2.5 pr-4 text-base font-bold md:gap-2.5 md:py-3 md:pl-4 md:pr-[22px] md:text-xl"
@@ -149,7 +167,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
                 >
                   <CheckIcon size={16} strokeWidth={3} className="text-white" />
                 </span>
-                Terkirim — lihat layar!
+                {sentMessages[sent]}
               </div>
             ) : null}
 

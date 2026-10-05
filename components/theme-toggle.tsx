@@ -7,7 +7,7 @@ type Mode = "dark" | "light";
 
 const STORAGE_KEY = "wc-theme";
 
-export function ThemeToggle() {
+export function ThemeToggle({ iconOnly = false }: { iconOnly?: boolean }) {
   const [mode, setMode] = useState<Mode>("dark");
 
   useEffect(() => {
@@ -25,15 +25,17 @@ export function ThemeToggle() {
     setMode(next);
   };
 
+  const sizing = iconOnly ? "h-10 w-10 md:h-10" : "h-11 w-11 sm:h-10 sm:w-auto sm:px-3.5";
+
   return (
     <button
       type="button"
       onClick={toggle}
       aria-label={`Ganti ke mode ${nextLabel}`}
-      className="flex h-11 w-11 items-center justify-center gap-2 rounded-full border border-line bg-surface text-sm font-semibold text-fg sm:h-10 sm:w-auto sm:px-3.5"
+      className={`flex items-center justify-center gap-2 rounded-full border border-line bg-surface text-sm font-semibold text-fg ${sizing}`}
     >
       {mode === "dark" ? <SunIcon size={18} /> : <MoonIcon size={18} />}
-      <span className="hidden sm:inline">Mode {nextLabel}</span>
+      {iconOnly ? null : <span className="hidden sm:inline">Mode {nextLabel}</span>}
     </button>
   );
 }

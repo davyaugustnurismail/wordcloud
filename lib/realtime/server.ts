@@ -1,6 +1,7 @@
 import type { Server as HttpServer } from "node:http";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { Server } from "socket.io";
+import { adminCookieName, verifyAdminToken } from "../auth/admin-cookie";
 import { parseCookieHeader } from "../auth/cookies";
 import { openReadyToken, readyCookieName } from "../auth/ready-cookie";
 import { isValidCode, normalizeCode } from "../code";
@@ -8,7 +9,7 @@ import { getEnv } from "../env";
 import { getRedis } from "../redis";
 import { findSessionByCode } from "../sessions";
 import { handshakeAuthSchema } from "./events";
-import { onConnection } from "./handlers";
+import { onConnection } from "./connection";
 import { isOriginAllowed } from "./origin";
 import type { RealtimeServer } from "./types";
 
@@ -50,10 +51,14 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
       const session = isValidCode(code) ? await findSessionByCode(code) : null;
       if (!session) return next(new Error("session_not_found"));
 
+      const cookies = parseCookieHeader(socket.handshake.headers.cookie);
       if (parsed.data.role === "ready") {
-        const cookies = parseCookieHeader(socket.handshake.headers.cookie);
         const opened = await openReadyToken(cookies[readyCookieName(code)], code);
         if (!opened) return next(new Error("unauthorized"));
+      }
+      if (parsed.data.role === "admin") {
+        const allowed = await verifyAdminToken(cookies[adminCookieName(code)], code);
+        if (!allowed) return next(new Error("unauthorized"));
       }
 
       socket.data = {

@@ -146,6 +146,91 @@ export function WifiOffIcon(props: IconProps) {
   );
 }
 
+export function PauseIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M9 5v14M15 5v14" />
+    </Base>
+  );
+}
+
+export function FreezeIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 2v20M4.9 7l14.2 10M4.9 17L19.1 7" />
+    </Base>
+  );
+}
+
+export function TrashIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3" />
+    </Base>
+  );
+}
+
+export function PencilIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M4 20h4L19 9l-4-4L4 16v4z" />
+      <path d="M13.5 6.5l4 4" />
+    </Base>
+  );
+}
+
+export function EyeOffIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M3 3l18 18" />
+      <path d="M10.6 5.1A10.8 10.8 0 0 1 12 5c6 0 9.5 7 9.5 7a17 17 0 0 1-3.2 4.1M6.6 6.6A16.7 16.7 0 0 0 2.5 12s3.5 7 9.5 7a9.7 9.7 0 0 0 5.4-1.6" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+    </Base>
+  );
+}
+
+export function XIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M6 6l12 12M18 6L6 18" />
+    </Base>
+  );
+}
+
+export function PlusIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 5v14M5 12h14" />
+    </Base>
+  );
+}
+
+export function BanIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M5.6 5.6l12.8 12.8" />
+    </Base>
+  );
+}
+
+export function ShieldIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M12 3l8 3v6c0 4.5-3.4 8-8 9-4.6-1-8-4.5-8-9V6l8-3z" />
+    </Base>
+  );
+}
+
+export function ClockIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 7v5l3 2" />
+    </Base>
+  );
+}
+
 export function SpinnerIcon({ strokeWidth = 2.5, ...props }: IconProps) {
   return (
     <Base {...props} strokeWidth={strokeWidth} className={`animate-spin ${props.className ?? ""}`}>

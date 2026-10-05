@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { copyText } from "@/lib/clipboard";
@@ -23,7 +22,7 @@ function formatPin(pin: string): string {
 
 export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props) {
   const router = useRouter();
-  const [presence, setPresence] = useState<PresencePayload>({ display: 0, input: 0 });
+  const [presence, setPresence] = useState<PresencePayload>({ display: 0, input: 0, admin: 0 });
   const [showPin, setShowPin] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -43,6 +42,15 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
 
   const copyPin = async () => {
     setCopied(await copyText(pin));
+  };
+
+  const openAdmin = async () => {
+    try {
+      const response = await fetch(`/api/sessions/${code}/open-admin`, { method: "POST" });
+      router.push(response.ok ? `/s/${code}/admin` : `/masuk-admin?kode=${code}`);
+    } catch {
+      router.push(`/masuk-admin?kode=${code}`);
+    }
   };
 
   const start = async () => {
@@ -160,13 +168,14 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
                 </div>
               </div>
             </div>
-            <Link
-              href={`/s/${code}/admin`}
+            <button
+              type="button"
+              onClick={openAdmin}
               className="flex h-[50px] items-center justify-center gap-2 rounded-[14px] border border-line text-[15px] font-bold text-fg"
             >
               <span>Buka admin sesi di device&nbsp;ini</span>
               <ArrowRightIcon size={18} strokeWidth={2.2} />
-            </Link>
+            </button>
             <div className="flex items-center gap-4 rounded-[14px] bg-surface2 px-4 py-3.5">
               <div
                 role="img"

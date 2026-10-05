@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { connectRealtime } from "@/lib/realtime/client";
-import type { EntryDto } from "@/lib/realtime/events";
+import type { EntryDto, SessionState } from "@/lib/realtime/events";
 import type { CaseStyle, SessionSettings } from "@/lib/settings";
 import { computeLayout, type PlacedWord } from "@/lib/wordcloud/layout";
 import { loadWordFont, measureInk, WORD_FONT_FAMILY } from "@/lib/wordcloud/measure";
@@ -19,6 +19,15 @@ const MAX_ENTRIES = 1000;
 const MOVE_MS = 700;
 const EASING = "cubic-bezier(0.22, 1, 0.36, 1)";
 const MIN_MOVE_PX = 0.5;
+
+const IDLE_STATE: SessionState = { paused: false, frozen: false, clearedAt: null };
+
+function insertEntry(list: EntryDto[], entry: EntryDto): EntryDto[] {
+  const without = list.filter((existing) => existing.id !== entry.id);
+  const index = without.findIndex((existing) => existing.shownAt < entry.shownAt);
+  const next = index < 0 ? [...without, entry] : [...without.slice(0, index), entry, ...without.slice(index)];
+  return next.slice(0, MAX_ENTRIES);
+}
 
 function applyCase(text: string, style: CaseStyle): string {
   if (style === "kapital") return text.toUpperCase();
@@ -73,6 +82,7 @@ function useWakeLock() {
 export function Photowall({ code, initialSettings }: Props) {
   const [entries, setEntries] = useState<EntryDto[]>([]);
   const [settings, setSettings] = useState(initialSettings);
+  const [state, setState] = useState<SessionState>(IDLE_STATE);
   const [placed, setPlaced] = useState<PlacedWord[]>([]);
   const [fontReady, setFontReady] = useState(false);
   const size = useWindowSize();
@@ -81,6 +91,11 @@ export function Photowall({ code, initialSettings }: Props) {
   const previousRef = useRef(new Map<string, Pose>());
   const initialLayoutRef = useRef(true);
   const hintRef = useRef({ key: "", scale: 0 });
+  const placedCountRef = useRef(0);
+
+  const liveIds = useMemo(() => new Set(entries.map((entry) => entry.id)), [entries]);
+  const visibleWords = useMemo(() => placed.filter((word) => liveIds.has(word.id)), [placed, liveIds]);
+  const frozen = state.frozen;
 
   useWakeLock();
 
@@ -99,14 +114,22 @@ export function Photowall({ code, initialSettings }: Props) {
 
     socket.on("snapshot", (snapshot) => {
       setSettings(snapshot.settings);
+      setState(snapshot.state);
       setEntries(snapshot.entries);
     });
-    socket.on("entry:shown", (entry) => {
-      setEntries((current) => {
-        if (current.some((existing) => existing.id === entry.id)) return current;
-        return [entry, ...current].slice(0, MAX_ENTRIES);
-      });
+    socket.on("entry:shown", (entry) => setEntries((current) => insertEntry(current, entry)));
+    socket.on("entry:hidden", ({ id }) => setEntries((current) => current.filter((entry) => entry.id !== id)));
+    socket.on("entry:updated", ({ id, text }) =>
+      setEntries((current) => current.map((entry) => (entry.id === id ? { ...entry, text } : entry))),
+    );
+    socket.on("session:state", (next) => {
+      setState(next);
+      const clearedAt = next.clearedAt;
+      if (clearedAt !== null) {
+        setEntries((current) => current.filter((entry) => entry.shownAt > clearedAt));
+      }
     });
+    socket.on("settings:update", setSettings);
 
     return () => {
       socket.disconnect();
@@ -115,6 +138,7 @@ export function Photowall({ code, initialSettings }: Props) {
 
   useEffect(() => {
     if (!fontReady || size.w === 0 || size.h === 0) return;
+    if (frozen && placedCountRef.current > 0) return;
     const frame = requestAnimationFrame(() => {
       const words = entries.slice(0, settings.maxWords).map((entry) => {
         const text = applyCase(entry.text, settings.caseStyle);
@@ -135,10 +159,11 @@ export function Photowall({ code, initialSettings }: Props) {
         hint,
       );
       hintRef.current = { key, scale: result.scale };
+      placedCountRef.current = result.placed.length;
       setPlaced(result.placed);
     });
     return () => cancelAnimationFrame(frame);
-  }, [entries, settings, size, fontReady]);
+  }, [entries, settings, size, fontReady, frozen]);
 
   useLayoutEffect(() => {
     const previous = previousRef.current;
@@ -195,7 +220,7 @@ export function Photowall({ code, initialSettings }: Props) {
       className="fixed inset-0 cursor-none select-none overflow-hidden"
       style={{ background: photowallBackgrounds[settings.photowallTheme], fontFamily: WORD_FONT_FAMILY }}
     >
-      {placed.map((word) => (
+      {visibleWords.map((word) => (
         <span
           key={word.id}
           ref={(node) => {

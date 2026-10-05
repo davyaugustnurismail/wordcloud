@@ -1,9 +1,7 @@
-import { createHash } from "node:crypto";
 import { EncryptJWT, jwtDecrypt } from "jose";
 import { z } from "zod";
-import { getEnv } from "../env";
-
-export const READY_COOKIE_MAX_AGE_SEC = 60 * 60 * 24;
+import { AUTH_COOKIE_MAX_AGE_SEC, authCookieOptions } from "./cookie-options";
+import { secretKey } from "./secret";
 
 const payloadSchema = z.object({
   code: z.string(),
@@ -16,25 +14,13 @@ export function readyCookieName(code: string): string {
   return `wc_ready_${code}`;
 }
 
-export function readyCookieOptions() {
-  return {
-    httpOnly: true,
-    sameSite: "lax" as const,
-    secure: getEnv().PUBLIC_URL.startsWith("https"),
-    path: "/",
-    maxAge: READY_COOKIE_MAX_AGE_SEC,
-  };
-}
-
-function secretKey(): Uint8Array {
-  return createHash("sha256").update(getEnv().AUTH_SECRET).digest();
-}
+export const readyCookieOptions = authCookieOptions;
 
 export async function sealReadyToken(payload: ReadyPayload): Promise<string> {
   return new EncryptJWT(payload)
     .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
     .setIssuedAt()
-    .setExpirationTime(`${READY_COOKIE_MAX_AGE_SEC}s`)
+    .setExpirationTime(`${AUTH_COOKIE_MAX_AGE_SEC}s`)
     .encrypt(secretKey());
 }
 

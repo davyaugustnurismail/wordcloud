@@ -1,0 +1,167 @@
+import { and, asc, desc, eq, gt, inArray, isNotNull, sql } from "drizzle-orm";
+import { getDb } from "./db";
+import { entries, moderationLogs } from "./db/schema";
+import type { AdminEntryDto, EntryDto } from "./realtime/events";
+
+export type EntryRow = typeof entries.$inferSelect;
+
+type ModerationAction = typeof moderationLogs.$inferInsert.action;
+
+export function toAdminDto(row: EntryRow): AdminEntryDto {
+  return {
+    id: row.id,
+    text: row.text,
+    status: row.status,
+    createdAt: row.createdAt.getTime(),
+    shownAt: row.shownAt ? row.shownAt.getTime() : null,
+    deviceId: row.deviceId,
+  };
+}
+
+export function toEntryDto(row: EntryRow): EntryDto {
+  return { id: row.id, text: row.text, shownAt: (row.shownAt ?? row.createdAt).getTime() };
+}
+
+async function logAction(entryId: string, action: ModerationAction, actor: string) {
+  await getDb().insert(moderationLogs).values({ entryId, action, actor });
+}
+
+export async function listVisibleEntries(sessionId: string, clearedAt: number | null, limit: number): Promise<EntryDto[]> {
+  const rows = await getDb()
+    .select()
+    .from(entries)
+    .where(
+      and(
+        eq(entries.sessionId, sessionId),
+        eq(entries.status, "visible"),
+        isNotNull(entries.shownAt),
+        clearedAt === null ? undefined : gt(entries.shownAt, new Date(clearedAt)),
+      ),
+    )
+    .orderBy(desc(entries.shownAt), desc(entries.id))
+    .limit(limit);
+  return rows.map(toEntryDto);
+}
+
+export async function listAdminEntries(sessionId: string, limit: number): Promise<AdminEntryDto[]> {
+  const rows = await getDb()
+    .select()
+    .from(entries)
+    .where(eq(entries.sessionId, sessionId))
+    .orderBy(desc(sql`coalesce(${entries.shownAt}, ${entries.createdAt})`), desc(entries.id))
+    .limit(limit);
+  return rows.map(toAdminDto);
+}
+
+export async function insertEntry(input: {
+  sessionId: string;
+  text: string;
+  normalized: string;
+  deviceId: string | null;
+  status: "visible" | "pending";
+}): Promise<EntryRow> {
+  const [row] = await getDb()
+    .insert(entries)
+    .values({
+      sessionId: input.sessionId,
+      text: input.text,
+      normalized: input.normalized,
+      status: input.status,
+      shownAt: input.status === "visible" ? new Date() : null,
+      deviceId: input.deviceId,
+    })
+    .returning();
+  if (!row) throw new Error("Kata gagal disimpan");
+  return row;
+}
+
+export async function approveEntries(sessionId: string, ids: string[], actor: string): Promise<EntryRow[]> {
+  const pending = await getDb()
+    .select()
+    .from(entries)
+    .where(and(eq(entries.sessionId, sessionId), inArray(entries.id, ids), eq(entries.status, "pending")))
+    .orderBy(asc(entries.createdAt), asc(entries.id));
+
+  const approved: EntryRow[] = [];
+  let lastShownAt = 0;
+  for (const row of pending) {
+    lastShownAt = Math.max(Date.now(), lastShownAt + 1);
+    const [updated] = await getDb()
+      .update(entries)
+      .set({ status: "visible", shownAt: new Date(lastShownAt) })
+      .where(and(eq(entries.id, row.id), eq(entries.status, "pending")))
+      .returning();
+    if (updated) {
+      await logAction(updated.id, "approve", actor);
+      approved.push(updated);
+    }
+  }
+  return approved;
+}
+
+async function transition(
+  sessionId: string,
+  id: string,
+  from: EntryRow["status"],
+  to: EntryRow["status"],
+  action: ModerationAction,
+  actor: string,
+): Promise<EntryRow | null> {
+  const [updated] = await getDb()
+    .update(entries)
+    .set({ status: to })
+    .where(and(eq(entries.id, id), eq(entries.sessionId, sessionId), eq(entries.status, from)))
+    .returning();
+  if (!updated) return null;
+  await logAction(updated.id, action, actor);
+  return updated;
+}
+
+export function rejectEntry(sessionId: string, id: string, actor: string) {
+  return transition(sessionId, id, "pending", "hidden", "hide", actor);
+}
+
+export function hideEntry(sessionId: string, id: string, actor: string) {
+  return transition(sessionId, id, "visible", "hidden", "hide", actor);
+}
+
+export async function restoreEntry(
+  sessionId: string,
+  id: string,
+  clearedAt: number | null,
+  actor: string,
+): Promise<EntryRow | null> {
+  const [row] = await getDb()
+    .select()
+    .from(entries)
+    .where(and(eq(entries.id, id), eq(entries.sessionId, sessionId), eq(entries.status, "hidden")))
+    .limit(1);
+  if (!row) return null;
+
+  const keepsPlace = row.shownAt !== null && (clearedAt === null || row.shownAt.getTime() > clearedAt);
+  const [updated] = await getDb()
+    .update(entries)
+    .set({ status: "visible", shownAt: keepsPlace ? row.shownAt : new Date() })
+    .where(and(eq(entries.id, id), eq(entries.status, "hidden")))
+    .returning();
+  if (!updated) return null;
+  await logAction(updated.id, "restore", actor);
+  return updated;
+}
+
+export async function editEntry(
+  sessionId: string,
+  id: string,
+  text: string,
+  normalized: string,
+  actor: string,
+): Promise<EntryRow | null> {
+  const [updated] = await getDb()
+    .update(entries)
+    .set({ text, normalized })
+    .where(and(eq(entries.id, id), eq(entries.sessionId, sessionId)))
+    .returning();
+  if (!updated) return null;
+  await logAction(updated.id, "edit", actor);
+  return updated;
+}
