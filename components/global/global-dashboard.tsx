@@ -3,10 +3,11 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { clockLabel, fillBuckets, type Bucket } from "@/lib/chart";
+import { copyText } from "@/lib/clipboard";
 import { downloadSessionPng } from "@/lib/png-download";
 import type { GlobalStats, SessionOverview } from "@/lib/stats";
 import { HourlyChart, TopWords } from "../admin/charts";
-import { DownloadIcon, SpinnerIcon } from "../icons";
+import { CheckIcon, CopyIcon, DownloadIcon, EyeIcon, EyeOffIcon, SpinnerIcon } from "../icons";
 import { AutoRefresh } from "./auto-refresh";
 
 type Filter = "semua" | "aktif" | "selesai";
@@ -14,6 +15,8 @@ type Filter = "semua" | "aktif" | "selesai";
 const HOUR_MS = 3_600_000;
 const HOUR_WINDOW = 8;
 const REFRESH_MS = 15_000;
+const PIN_VISIBLE_MS = 20_000;
+const COLUMNS = "minmax(130px, 1.5fr) 90px 148px 84px 90px 52px 140px 250px";
 
 const filters: { id: Filter; label: string }[] = [
   { id: "semua", label: "Semua" },
@@ -36,12 +39,110 @@ function Tile({ label, value }: { label: string; value: number }) {
   );
 }
 
+type PinState = "hidden" | "loading" | "shown" | "missing" | "error";
+
+function formatPin(pin: string): string {
+  return `${pin.slice(0, 3)} ${pin.slice(3)}`;
+}
+
+function PinCell({ session }: { session: SessionOverview }) {
+  const [state, setState] = useState<PinState>("hidden");
+  const [pin, setPin] = useState("");
+  const [copied, setCopied] = useState(false);
+  const iconButton =
+    "flex h-9 w-9 items-center justify-center rounded-lg border border-line bg-transparent text-fg disabled:opacity-60";
+
+  useEffect(() => {
+    if (state !== "shown") return;
+    const timer = setTimeout(() => {
+      setPin("");
+      setState("hidden");
+    }, PIN_VISIBLE_MS);
+    return () => clearTimeout(timer);
+  }, [state]);
+
+  useEffect(() => {
+    if (!copied) return;
+    const timer = setTimeout(() => setCopied(false), 1500);
+    return () => clearTimeout(timer);
+  }, [copied]);
+
+  const reveal = async () => {
+    setState("loading");
+    try {
+      const response = await fetch(`/api/admin/sessions/${session.id}/pin`, { cache: "no-store" });
+      if (!response.ok) throw new Error("pin");
+      const body = (await response.json()) as { pin: string | null };
+      if (body.pin) {
+        setPin(body.pin);
+        setState("shown");
+      } else {
+        setState("missing");
+      }
+    } catch {
+      setState("error");
+    }
+  };
+
+  const hide = () => {
+    setPin("");
+    setState("hidden");
+  };
+
+  if (state === "missing") {
+    return (
+      <span
+        role="cell"
+        title="Sesi ini dibuat sebelum PIN disimpan. Pakai Reset PIN untuk membuat PIN baru."
+        className="text-xs leading-tight text-muted"
+      >
+        Tidak tersimpan. Pakai Reset PIN.
+      </span>
+    );
+  }
+
+  return (
+    <span role="cell" className="flex items-center gap-1.5">
+      <span className="min-w-[78px] font-mono font-bold tracking-[0.06em]" aria-live="polite">
+        {state === "shown" ? formatPin(pin) : state === "error" ? "Gagal" : "••• •••"}
+      </span>
+      {state === "shown" ? (
+        <>
+          <button type="button" onClick={hide} aria-label={`Sembunyikan PIN sesi ${session.name}`} className={iconButton}>
+            <EyeOffIcon size={16} />
+          </button>
+          <button
+            type="button"
+            onClick={async () => setCopied(await copyText(pin))}
+            aria-label={`Salin PIN sesi ${session.name}`}
+            className={iconButton}
+          >
+            {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
+          </button>
+        </>
+      ) : (
+        <button
+          type="button"
+          disabled={state === "loading"}
+          onClick={reveal}
+          aria-label={`Lihat PIN admin sesi ${session.name}`}
+          className={iconButton}
+        >
+          {state === "loading" ? <SpinnerIcon size={16} /> : <EyeIcon size={16} />}
+        </button>
+      )}
+    </span>
+  );
+}
+
 function SessionRow({
   session,
+  pinVersion,
   onResetPin,
   resetting,
 }: {
   session: SessionOverview;
+  pinVersion: number;
   onResetPin: (session: SessionOverview) => void;
   resetting: boolean;
 }) {
@@ -62,7 +163,7 @@ function SessionRow({
     <div
       role="row"
       className="grid items-center gap-3 border-t border-line px-[22px] py-2"
-      style={{ gridTemplateColumns: "minmax(150px, 1.5fr) 100px 100px 100px 60px 160px 250px" }}
+      style={{ gridTemplateColumns: COLUMNS }}
     >
       <span role="cell" className="truncate text-[15px] font-extrabold">
         {session.name}
@@ -70,6 +171,7 @@ function SessionRow({
       <span role="cell" className="font-mono font-bold tracking-[0.06em]">
         {session.code}
       </span>
+      <PinCell key={pinVersion} session={session} />
       <span role="cell">
         <span
           className={`inline-flex h-[26px] items-center rounded-full px-2.5 text-xs font-extrabold ${
@@ -130,6 +232,7 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
   const [hours, setHours] = useState<Bucket[] | null>(null);
   const [reset, setReset] = useState<{ code: string; pin: string } | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
+  const [pinVersions, setPinVersions] = useState<Record<string, number>>({});
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,6 +257,7 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
       const response = await fetch(`/api/admin/sessions/${session.id}/reset-pin`, { method: "POST" });
       if (!response.ok) throw new Error("reset");
       setReset((await response.json()) as { code: string; pin: string });
+      setPinVersions((current) => ({ ...current, [session.id]: (current[session.id] ?? 0) + 1 }));
     } catch {
       setError("PIN gagal direset. Coba lagi.");
     } finally {
@@ -264,14 +368,15 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
           </div>
         </div>
         <div className="overflow-x-auto">
-          <div role="table" aria-label="Daftar sesi" className="min-w-[900px] text-sm">
+          <div role="table" aria-label="Daftar sesi" className="min-w-[1110px] text-sm">
             <div
               role="row"
               className="grid items-center gap-3 border-t border-line px-[22px] py-2.5 text-[13px] font-bold text-muted"
-              style={{ gridTemplateColumns: "minmax(150px, 1.5fr) 100px 100px 100px 60px 160px 250px" }}
+              style={{ gridTemplateColumns: COLUMNS }}
             >
               <span role="columnheader">Nama</span>
               <span role="columnheader">Kode</span>
+              <span role="columnheader">PIN admin</span>
               <span role="columnheader">Status</span>
               <span role="columnheader">Moderasi</span>
               <span role="columnheader" className="text-right">
@@ -284,7 +389,13 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
             </div>
             {visible.length === 0 ? <div className="border-t border-line px-[22px] py-5 text-muted">Belum ada sesi.</div> : null}
             {visible.map((session) => (
-              <SessionRow key={session.id} session={session} onResetPin={resetPin} resetting={resettingId === session.id} />
+              <SessionRow
+                key={session.id}
+                session={session}
+                pinVersion={pinVersions[session.id] ?? 0}
+                onResetPin={resetPin}
+                resetting={resettingId === session.id}
+              />
             ))}
           </div>
         </div>

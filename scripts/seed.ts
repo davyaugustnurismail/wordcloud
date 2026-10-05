@@ -1,8 +1,9 @@
 import "../lib/load-env";
 import { copyFile, mkdir, readdir } from "node:fs/promises";
 import path from "node:path";
-import { argon2id, hash } from "argon2";
+import { argon2id, hash, verify } from "argon2";
 import { and, eq, isNull } from "drizzle-orm";
+import { sealPin } from "../lib/auth/pin-vault";
 import { getDb, getPool } from "../lib/db";
 import { appSettings, assets, sessions } from "../lib/db/schema";
 import { getEnv } from "../lib/env";
@@ -24,17 +25,26 @@ async function main() {
     .onConflictDoNothing();
   await db.insert(appSettings).values({ key: "session_defaults", value: settings }).onConflictDoNothing();
 
-  const existing = await db.select({ id: sessions.id }).from(sessions).where(eq(sessions.code, SAMPLE_CODE));
-  if (existing.length === 0) {
+  const existing = await db
+    .select({ id: sessions.id, pinHash: sessions.pinHash, pinEncrypted: sessions.pinEncrypted })
+    .from(sessions)
+    .where(eq(sessions.code, SAMPLE_CODE));
+  const current = existing[0];
+  if (!current) {
     await db.insert(sessions).values({
       code: SAMPLE_CODE,
       name: "Sesi Photowall",
       pinHash: await hash(SAMPLE_PIN, { type: argon2id }),
+      pinEncrypted: await sealPin(SAMPLE_PIN),
       settings,
     });
     console.log(`[seed] sesi contoh dibuat: kode ${SAMPLE_CODE}, PIN ${SAMPLE_PIN}`);
   } else {
-    await db.update(sessions).set({ settings }).where(eq(sessions.code, SAMPLE_CODE));
+    const keepsSamplePin = !current.pinEncrypted && (await verify(current.pinHash, SAMPLE_PIN).catch(() => false));
+    await db
+      .update(sessions)
+      .set(keepsSamplePin ? { settings, pinEncrypted: await sealPin(SAMPLE_PIN) } : { settings })
+      .where(eq(sessions.code, SAMPLE_CODE));
     console.log(`[seed] sesi contoh ${SAMPLE_CODE} sudah ada, settings diset ulang ke default`);
   }
 

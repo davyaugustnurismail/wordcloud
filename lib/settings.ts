@@ -20,7 +20,9 @@ export const MAX_PALETTE_COLORS = 10;
 export const DEFAULT_PHOTOWALL_COLOR = "#1b2a49";
 export const DEFAULT_INPUT_COLOR = "#ffe14d";
 
-export const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}$/);
+export const MAX_WORD_TRANSPARENCY = 90;
+
+export const hexColor = z.string().regex(/^#[0-9a-fA-F]{6}([0-9a-fA-F]{2})?$/);
 
 const fields = {
   moderationMode: z.enum(moderationModes),
@@ -34,6 +36,7 @@ const fields = {
   inputOverlay: z.number().int().min(0).max(85),
   photowallFont: z.enum(photowallFonts),
   palette: z.array(hexColor).min(1).max(MAX_PALETTE_COLORS).nullable(),
+  wordTransparency: z.number().int().min(0).max(MAX_WORD_TRANSPARENCY),
   inputBoxStyle: z.enum(inputBoxStyles),
   inputTextColor: hexColor.nullable(),
   inputFieldColor: hexColor.nullable(),
@@ -63,6 +66,7 @@ export const sessionSettingsSchema = z.object({
   inputOverlay: fields.inputOverlay.default(55),
   photowallFont: fields.photowallFont.default("baloo"),
   palette: fields.palette.default(null),
+  wordTransparency: fields.wordTransparency.default(0),
   inputBoxStyle: fields.inputBoxStyle.default("membulat"),
   inputTextColor: fields.inputTextColor.default(null),
   inputFieldColor: fields.inputFieldColor.default(null),
@@ -105,6 +109,7 @@ export const settingsPatchSchema = z
     inputOverlay: fields.inputOverlay.optional(),
     photowallFont: fields.photowallFont.optional(),
     palette: fields.palette.optional(),
+    wordTransparency: fields.wordTransparency.optional(),
     inputBoxStyle: fields.inputBoxStyle.optional(),
     inputTextColor: fields.inputTextColor.optional(),
     inputFieldColor: fields.inputFieldColor.optional(),

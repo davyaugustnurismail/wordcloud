@@ -6,7 +6,7 @@ import { cssFontFamily, fontSpecs } from "@/lib/wordcloud/fonts";
 import type { PlacedWord } from "@/lib/wordcloud/layout";
 import { createLayoutRunner, type LayoutRunner } from "@/lib/wordcloud/layout-runner";
 import { loadWordFont, measureInk } from "@/lib/wordcloud/measure";
-import { paletteFor, photowallBackground, pickWordColor } from "@/lib/wordcloud/palette";
+import { paletteFor, pickWordColor, stageBackground } from "@/lib/wordcloud/palette";
 import { applyCase } from "@/lib/wordcloud/text";
 
 export type StageEntry = { id: string; text: string };
@@ -19,6 +19,7 @@ export type StageSettings = Pick<
   | "photowallOverlay"
   | "photowallFont"
   | "palette"
+  | "wordTransparency"
   | "caseStyle"
   | "k"
   | "minRatio"
@@ -182,7 +183,7 @@ export function WordcloudStage({
     <div
       ref={containerRef}
       className={`relative overflow-hidden ${className}`}
-      style={{ background: photowallBackground(theme, settings.photowallColor), fontFamily: cssFontFamily(font) }}
+      style={{ background: stageBackground(theme, settings.photowallColor), fontFamily: cssFontFamily(font) }}
     >
       {theme === "foto" ? (
         <>
@@ -216,7 +217,7 @@ export function WordcloudStage({
             height: word.lh,
             fontWeight: fontSpecs[font].weight,
             whiteSpace: "nowrap",
-            color: pickWordColor(palette, word.id),
+            color: pickWordColor(palette, word.id, settings.wordTransparency),
           }}
         >
           {word.text}

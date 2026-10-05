@@ -1,9 +1,10 @@
-import { isDarkColor, readableOn, withAlpha } from "./color";
+import { flatten, isDarkColor, overBlack, readableOn, withAlpha } from "./color";
 import type { InputBoxStyle, InputTheme, SessionSettings } from "./settings";
 
 export type InputThemeTokens = {
   usesImage: boolean;
   background: string;
+  base: string;
   text: string;
   helper: string;
   status: { text: string; dot: string; chipBackground: string | null };
@@ -100,6 +101,7 @@ export const baseInputThemeTokens: Record<Exclude<InputTheme, "warna">, InputThe
   reggae: {
     usesImage: false,
     background: "linear-gradient(to bottom, #D62F2F 0 33.34%, #F5C02E 33.34% 66.67%, #17924A 66.67% 100%)",
+    base: "#f5c02e",
     text: "#0C0C0C",
     helper: "#0C0C0C",
     status: { text: "#FFFFFF", dot: "#3DDC84", chipBackground: "#0C0C0C" },
@@ -113,6 +115,7 @@ export const baseInputThemeTokens: Record<Exclude<InputTheme, "warna">, InputThe
   hitam: {
     usesImage: false,
     background: "#000000",
+    base: "#000000",
     text: "#FFFFFF",
     helper: "#BDBDBD",
     status: { text: "#BDBDBD", dot: "#3DDC84", chipBackground: null },
@@ -126,6 +129,7 @@ export const baseInputThemeTokens: Record<Exclude<InputTheme, "warna">, InputThe
   putih: {
     usesImage: false,
     background: "#FFFFFF",
+    base: "#ffffff",
     text: "#141416",
     helper: "#5B5B63",
     status: { text: "#5B5B63", dot: "#15803D", chipBackground: null },
@@ -139,6 +143,7 @@ export const baseInputThemeTokens: Record<Exclude<InputTheme, "warna">, InputThe
   foto: {
     usesImage: true,
     background: "#000000",
+    base: "#000000",
     text: "#FFFFFF",
     helper: "#E6E6E6",
     status: { text: "#E6E6E6", dot: "#3DDC84", chipBackground: null },
@@ -171,7 +176,8 @@ function solidTokens(background: string): InputThemeTokens {
   const helper = withAlpha(text, 0.78);
   return {
     usesImage: false,
-    background,
+    background: overBlack(background),
+    base: flatten(background),
     text,
     helper,
     status: { text: helper, dot: dark ? "#3DDC84" : "#15803D", chipBackground: null },
@@ -218,7 +224,7 @@ export function resolveInputTheme(settings: InputThemeSettings): ResolvedInputTh
     tokens.field.focusShadow = `0 0 0 8px ${withAlpha(settings.inputBorderColor, 0.2)}`;
   }
   if (settings.inputButtonColor) {
-    const color = readableOn(settings.inputButtonColor);
+    const color = readableOn(settings.inputButtonColor, tokens.base);
     tokens.button = {
       background: settings.inputButtonColor,
       color,

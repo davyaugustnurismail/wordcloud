@@ -1,10 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { minContrast, normalizeHex } from "@/lib/color";
+import { composeColor, hexAlpha, minContrast, normalizeHex, scaleAlpha } from "@/lib/color";
 import { inputBoxSpecs } from "@/lib/input-themes";
-import { inputBoxStyles, MAX_PALETTE_COLORS, type InputBoxStyle, type PhotowallTheme } from "@/lib/settings";
-import { paletteFor, palettePresets, photowallBackground, samePalette } from "@/lib/wordcloud/palette";
+import {
+  inputBoxStyles,
+  MAX_PALETTE_COLORS,
+  MAX_WORD_TRANSPARENCY,
+  type InputBoxStyle,
+  type PhotowallTheme,
+} from "@/lib/settings";
+import { paletteFor, palettePresets, photowallBackground, samePalette, wordOpacity } from "@/lib/wordcloud/palette";
 import { AlertCircleIcon, CheckIcon, PlusIcon, XIcon } from "./icons";
 
 const LOW_CONTRAST = 2.2;
@@ -19,8 +25,12 @@ type ColorFieldProps = {
   hint?: string;
 };
 
+const CHECKERBOARD = "conic-gradient(#c9c9c9 25%, #ffffff 0 50%, #c9c9c9 0 75%, #ffffff 0)";
+
 export function ColorField({ id, label, value, fallback, onChange, onReset, hint }: ColorFieldProps) {
   const shown = (value ?? fallback).toLowerCase();
+  const alpha = hexAlpha(shown);
+  const transparency = Math.round((1 - alpha) * 100);
   const [draft, setDraft] = useState(shown);
 
   useEffect(() => {
@@ -43,20 +53,27 @@ export function ColorField({ id, label, value, fallback, onChange, onReset, hint
         <input
           id={id}
           type="color"
-          value={shown}
-          onChange={(event) => onChange(event.target.value.toLowerCase())}
+          value={shown.slice(0, 7)}
+          onChange={(event) => onChange(composeColor(event.target.value, alpha))}
           className="h-11 w-14 shrink-0 cursor-pointer rounded-[10px] border border-line bg-field p-1"
         />
+        <span
+          aria-hidden="true"
+          className="relative h-11 w-11 shrink-0 overflow-hidden rounded-[10px] border border-line"
+          style={{ backgroundImage: CHECKERBOARD, backgroundSize: "12px 12px" }}
+        >
+          <span className="absolute inset-0" style={{ background: shown }} />
+        </span>
         <input
           type="text"
           aria-label={`${label}, kode hex`}
           value={draft}
-          maxLength={7}
+          maxLength={9}
           spellCheck={false}
           autoComplete="off"
           onChange={(event) => typeHex(event.target.value)}
           onBlur={() => setDraft(shown)}
-          className="box-border h-11 w-[104px] min-w-0 rounded-[10px] border border-line bg-field px-3 font-mono text-sm font-bold uppercase text-fg focus:border-ring focus:outline-none"
+          className="box-border h-11 w-[124px] min-w-0 rounded-[10px] border border-line bg-field px-3 font-mono text-sm font-bold uppercase text-fg focus:border-ring focus:outline-none"
         />
         {onReset && value !== null ? (
           <button
@@ -67,6 +84,22 @@ export function ColorField({ id, label, value, fallback, onChange, onReset, hint
             Otomatis
           </button>
         ) : null}
+      </div>
+      <div className="flex items-center gap-2.5">
+        <label htmlFor={`${id}-transparansi`} className="w-[92px] shrink-0 text-xs font-semibold text-muted">
+          Transparansi
+        </label>
+        <input
+          id={`${id}-transparansi`}
+          type="range"
+          min={0}
+          max={100}
+          step={1}
+          value={transparency}
+          onChange={(event) => onChange(composeColor(shown, 1 - Number(event.target.value) / 100))}
+          className="min-w-0 grow accent-primary"
+        />
+        <span className="w-10 shrink-0 text-right text-xs font-bold tabular-nums">{transparency}%</span>
       </div>
       {hint ? <span className="text-xs text-muted">{hint}</span> : null}
     </div>
@@ -110,15 +143,19 @@ type PaletteFieldProps = {
   theme: PhotowallTheme;
   color: string;
   palette: string[] | null;
+  transparency: number;
   onChange: (palette: string[] | null) => void;
+  onTransparencyChange: (transparency: number) => void;
 };
 
-export function PaletteField({ theme, color, palette, onChange }: PaletteFieldProps) {
+export function PaletteField({ theme, color, palette, transparency, onChange, onTransparencyChange }: PaletteFieldProps) {
   const [editing, setEditing] = useState(false);
   const base = paletteFor(theme, null, color);
   const colors = palette ?? base;
   const background = theme === "foto" ? null : photowallBackground(theme, color);
-  const lowContrast = background !== null && minContrast(colors, background) < LOW_CONTRAST;
+  const opacity = wordOpacity(transparency);
+  const fade = (list: readonly string[]) => list.map((item) => scaleAlpha(item, opacity));
+  const lowContrast = background !== null && minContrast(fade(colors), background) < LOW_CONTRAST;
   const matchesPreset = palette !== null && palettePresets.some((preset) => samePalette(palette, preset.colors));
 
   return (
@@ -132,10 +169,26 @@ export function PaletteField({ theme, color, palette, onChange }: PaletteFieldPr
             label={preset.label}
             colors={preset.colors}
             selected={samePalette(palette, preset.colors)}
-            lowContrast={background !== null && minContrast(preset.colors, background) < LOW_CONTRAST}
+            lowContrast={background !== null && minContrast(fade(preset.colors), background) < LOW_CONTRAST}
             onClick={() => onChange([...preset.colors])}
           />
         ))}
+      </div>
+      <div className="flex items-center gap-2.5">
+        <label htmlFor="transparansi-kata" className="w-[92px] shrink-0 text-xs font-semibold text-muted">
+          Transparansi kata
+        </label>
+        <input
+          id="transparansi-kata"
+          type="range"
+          min={0}
+          max={MAX_WORD_TRANSPARENCY}
+          step={1}
+          value={transparency}
+          onChange={(event) => onTransparencyChange(Number(event.target.value))}
+          className="min-w-0 grow accent-primary"
+        />
+        <span className="w-10 shrink-0 text-right text-xs font-bold tabular-nums">{transparency}%</span>
       </div>
       {lowContrast ? (
         <span role="status" className="flex items-center gap-1.5 text-[13px] font-bold text-warn">

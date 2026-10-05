@@ -1,3 +1,4 @@
+import { hexAlpha } from "../color";
 import { assetUrl, type SessionSettings } from "../settings";
 import { canvasFont } from "./fonts";
 import { computeLayout } from "./layout";
@@ -18,6 +19,7 @@ type PngSettings = Pick<
   | "photowallOverlay"
   | "photowallFont"
   | "palette"
+  | "wordTransparency"
   | "caseStyle"
   | "k"
   | "minRatio"
@@ -70,7 +72,12 @@ export async function renderWordcloudPng(
   const context = canvas.getContext("2d");
   if (!context) throw new Error("Canvas tidak tersedia");
 
-  context.fillStyle = photowallBackground(settings.photowallTheme, settings.photowallColor);
+  const background = photowallBackground(settings.photowallTheme, settings.photowallColor);
+  if (hexAlpha(background) < 1) {
+    context.fillStyle = "#000000";
+    context.fillRect(0, 0, width, height);
+  }
+  context.fillStyle = background;
   context.fillRect(0, 0, width, height);
 
   if (settings.photowallTheme === "foto") {
@@ -90,7 +97,7 @@ export async function renderWordcloudPng(
     const metrics = metricsById.get(word.id);
     if (!metrics) continue;
     context.font = canvasFont(font, word.fs);
-    context.fillStyle = pickWordColor(palette, word.id);
+    context.fillStyle = pickWordColor(palette, word.id, settings.wordTransparency);
     context.fillText(word.text, word.x, word.y + (metrics.fa * word.fs) / 100);
   }
 

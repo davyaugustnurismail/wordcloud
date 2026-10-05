@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState, type FormEvent } from "react";
 import { CODE_LENGTH, normalizeCode } from "@/lib/code";
 import { AlertCircleIcon, ArrowRightIcon, ChevronLeftIcon, PhoneIcon, ScanIcon, SpinnerIcon } from "./icons";
+import { useSanitizedField } from "./use-sanitized-field";
 
 function lookupError(status: number): string {
   if (status === 404) return "Kode tidak ditemukan. Cek lagi di layar Siap tayang.";
@@ -14,9 +15,10 @@ function lookupError(status: number): string {
 
 export function JoinForm() {
   const router = useRouter();
-  const [code, setCode] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const field = useSanitizedField({ clean: normalizeCode, onTyped: () => setError(null) });
+  const code = field.value;
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -78,12 +80,9 @@ export function JoinForm() {
             <input
               id="kode-join"
               type="text"
-              value={code}
-              onChange={(event) => {
-                setCode(normalizeCode(event.target.value));
-                setError(null);
-              }}
+              {...field.inputProps}
               autoComplete="off"
+              autoCorrect="off"
               autoCapitalize="characters"
               spellCheck={false}
               aria-describedby="kode-bantu"

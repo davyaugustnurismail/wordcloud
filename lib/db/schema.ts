@@ -24,6 +24,7 @@ export const sessions = pgTable("sessions", {
   code: varchar("code", { length: 6 }).notNull().unique(),
   name: text("name").notNull(),
   pinHash: text("pin_hash").notNull(),
+  pinEncrypted: text("pin_encrypted"),
   status: sessionStatus("status").notNull().default("active"),
   settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
   paused: boolean("paused").notNull().default(false),

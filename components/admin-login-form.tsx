@@ -6,6 +6,7 @@ import { useCallback, useRef, useState, type FormEvent } from "react";
 import { CODE_LENGTH, normalizeCode } from "@/lib/code";
 import { AlertCircleIcon, ChevronLeftIcon, ClockIcon, LockIcon, ScanIcon, SpinnerIcon } from "./icons";
 import { QrScanner } from "./qr-scanner";
+import { useSanitizedField } from "./use-sanitized-field";
 
 const PIN_LENGTH = 6;
 
@@ -17,21 +18,26 @@ function loginError(status: number): string {
 
 export function AdminLoginForm({ initialCode }: { initialCode: string }) {
   const router = useRouter();
-  const [code, setCode] = useState(normalizeCode(initialCode));
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const pinRef = useRef<HTMLInputElement>(null);
+  const field = useSanitizedField({ clean: normalizeCode, initial: normalizeCode(initialCode), onTyped: () => setError(null) });
+  const code = field.value;
+  const setCode = field.setValue;
 
   const ready = code.length === CODE_LENGTH && pin.length === PIN_LENGTH;
 
-  const onScanned = useCallback((scanned: string) => {
-    setCode(scanned);
-    setError(null);
-    setScanning(false);
-    setTimeout(() => pinRef.current?.focus(), 0);
-  }, []);
+  const onScanned = useCallback(
+    (scanned: string) => {
+      setCode(scanned);
+      setError(null);
+      setScanning(false);
+      setTimeout(() => pinRef.current?.focus(), 0);
+    },
+    [setCode],
+  );
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -104,12 +110,9 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
               <input
                 id="kode-admin"
                 type="text"
-                value={code}
-                onChange={(event) => {
-                  setCode(normalizeCode(event.target.value));
-                  setError(null);
-                }}
+                {...field.inputProps}
                 autoComplete="off"
+                autoCorrect="off"
                 autoCapitalize="characters"
                 spellCheck={false}
                 className="box-border h-[60px] rounded-[14px] border border-line bg-field px-4 font-mono text-2xl font-bold uppercase tracking-[0.2em] text-fg focus:border-ring focus:outline-none md:h-16 md:px-[18px] md:text-[26px]"

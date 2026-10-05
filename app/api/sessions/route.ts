@@ -12,6 +12,7 @@ import {
   inputBoxStyles,
   inputThemes,
   MAX_PALETTE_COLORS,
+  MAX_WORD_TRANSPARENCY,
   moderationModes,
   photowallThemes,
 } from "@/lib/settings";
@@ -24,6 +25,10 @@ const blankToUndefined = (value: unknown) => (value === "" ? undefined : value);
 const optionalId = z.preprocess(blankToUndefined, z.uuid().optional());
 const optionalColor = z.preprocess(blankToUndefined, hexColor.optional());
 const optionalOverlay = z.preprocess(blankToUndefined, z.coerce.number().int().min(0).max(85).optional());
+const optionalWordTransparency = z.preprocess(
+  blankToUndefined,
+  z.coerce.number().int().min(0).max(MAX_WORD_TRANSPARENCY).optional(),
+);
 const optionalPalette = z.preprocess((value) => {
   if (value === "" || value === undefined) return undefined;
   if (typeof value !== "string") return value;
@@ -47,6 +52,7 @@ const createSchema = z.object({
   photowallOverlay: optionalOverlay,
   inputOverlay: optionalOverlay,
   palette: optionalPalette,
+  wordTransparency: optionalWordTransparency,
   inputBoxStyle: z.preprocess(blankToUndefined, z.enum(inputBoxStyles).optional()),
   inputTextColor: optionalColor,
   inputFieldColor: optionalColor,
@@ -111,6 +117,7 @@ export async function POST(request: Request) {
       photowallOverlay: rest.photowallOverlay,
       inputOverlay: rest.inputOverlay,
       palette: rest.palette,
+      wordTransparency: rest.wordTransparency,
       inputBoxStyle: rest.inputBoxStyle,
       inputTextColor: rest.inputTextColor,
       inputFieldColor: rest.inputFieldColor,

@@ -6,6 +6,7 @@ import { connectRealtime, getDeviceId, type RealtimeClient } from "@/lib/realtim
 import { assetUrl, type SessionSettings } from "@/lib/settings";
 import { checkWord, countChars, hasInnerSpace, stripWord } from "@/lib/words";
 import { AlertCircleIcon, CheckIcon, SpinnerIcon, WifiOffIcon } from "./icons";
+import { useSanitizedField } from "./use-sanitized-field";
 
 type Props = {
   code: string;
@@ -35,7 +36,6 @@ const sentMessages: Record<SentKind, string> = {
 export function InputKiosk({ code, initialSettings }: Props) {
   const [settings, setSettings] = useState(initialSettings);
   const [connected, setConnected] = useState(false);
-  const [value, setValue] = useState("");
   const [error, setError] = useState<InputError | null>(null);
   const [sent, setSent] = useState<SentKind | null>(null);
   const [paused, setPaused] = useState(false);
@@ -71,16 +71,17 @@ export function InputKiosk({ code, initialSettings }: Props) {
   }, [code]);
 
   const theme = resolveInputTheme(settings);
+  const field = useSanitizedField({
+    clean: (raw) => stripWord(raw, settings.maxChars),
+    onTyped: (next) => {
+      setError(hasInnerSpace(next) ? "space" : null);
+      setSent(null);
+    },
+  });
+  const value = field.value;
   const trimmed = value.trim();
   const blocked = paused || ended;
   const disabled = !connected || blocked || submitting || !trimmed || error === "space";
-
-  const onChange = (raw: string) => {
-    const next = stripWord(raw, settings.maxChars);
-    setValue(next);
-    setError(hasInnerSpace(next) ? "space" : null);
-    setSent(null);
-  };
 
   const submit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -101,7 +102,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
         return;
       }
       if (ack.status !== "rejected") {
-        setValue("");
+        field.setValue("");
         setError(null);
         setSent(ack.status);
         clearTimeout(sentTimerRef.current);
@@ -216,8 +217,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
                   ref={inputRef}
                   id="kata"
                   type="text"
-                  value={value}
-                  onChange={(event) => onChange(event.target.value)}
+                  {...field.inputProps}
                   placeholder="ketik satu kata"
                   autoFocus
                   autoComplete="off"

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { readableOn } from "@/lib/color";
+import { overBlack, readableOn } from "@/lib/color";
 import { demoEntries } from "@/lib/demo-words";
 import { checkImageFile } from "@/lib/image-file";
 import { baseTokensFor, inputBoxSpecs } from "@/lib/input-themes";
@@ -19,7 +19,7 @@ import {
   type SessionSettings,
 } from "@/lib/settings";
 import { fontSpecs } from "@/lib/wordcloud/fonts";
-import { paletteFor, photowallBackground } from "@/lib/wordcloud/palette";
+import { paletteFor, stageBackground } from "@/lib/wordcloud/palette";
 import { BackgroundPicker } from "../background-picker";
 import { CheckIcon } from "../icons";
 import { BoxStyleField, ColorField, PaletteField } from "../theme-controls";
@@ -155,7 +155,7 @@ export function ThemeSettings({ code, library, own }: Props) {
             <div className="flex flex-wrap gap-2.5">
               {photowallThemes.map((theme) => {
                 const selected = settings.photowallTheme === theme;
-                const background = photowallBackground(theme, settings.photowallColor);
+                const background = stageBackground(theme, settings.photowallColor);
                 const word = theme === "warna" ? wallColorWord : photowallSwatchWord[theme];
                 return (
                   <button
@@ -240,7 +240,9 @@ export function ThemeSettings({ code, library, own }: Props) {
                 theme={settings.photowallTheme}
                 color={settings.photowallColor}
                 palette={settings.palette}
+                transparency={settings.wordTransparency}
                 onChange={(next) => patchSettings({ palette: next }, true)}
+                onTransparencyChange={(next) => patchSettings({ wordTransparency: next })}
               />
             </div>
             <div className="flex min-w-0 flex-[1_1_220px] flex-col gap-2.5">
@@ -335,16 +337,6 @@ export function ThemeSettings({ code, library, own }: Props) {
               </div>
             </div>
           </div>
-
-          <div className="flex items-center justify-between gap-3 rounded-xl bg-surface2 px-4 py-3.5">
-            <div className="flex flex-col gap-0.5">
-              <span className="text-sm font-bold">Siluet bentuk</span>
-              <span className="text-[13px] text-muted">Wordcloud mengisi bentuk dari gambar mask hitam-putih.</span>
-            </div>
-            <span className="flex h-7 shrink-0 items-center rounded-full border border-line px-2.5 text-xs font-bold text-muted">
-              Fase akhir
-            </span>
-          </div>
         </SettingsCard>
 
         <SettingsCard title="Halaman input">
@@ -355,7 +347,7 @@ export function ThemeSettings({ code, library, own }: Props) {
                 const swatch =
                   theme === "warna"
                     ? {
-                        background: settings.inputColor,
+                        background: overBlack(settings.inputColor),
                         field: "#FFFFFF",
                         fieldBorder: readableOn(settings.inputColor),
                       }

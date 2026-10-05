@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { demoEntries } from "@/lib/demo-words";
 import { checkImageFile } from "@/lib/image-file";
-import { readableOn } from "@/lib/color";
+import { overBlack, readableOn } from "@/lib/color";
 import { baseTokensFor, inputBoxSpecs } from "@/lib/input-themes";
 import {
   assetUrl,
@@ -20,7 +20,7 @@ import {
   type SessionDefaults,
   type SessionSettings,
 } from "@/lib/settings";
-import { paletteFor, photowallBackground } from "@/lib/wordcloud/palette";
+import { paletteFor, stageBackground } from "@/lib/wordcloud/palette";
 import { InputPreview } from "./admin/input-preview";
 import { PhotowallPreview } from "./admin/photowall-preview";
 import { RangeField } from "./admin/settings-fields";
@@ -146,6 +146,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
   const [photowallOverlay, setPhotowallOverlay] = useState(45);
   const [inputOverlay, setInputOverlay] = useState(55);
   const [palette, setPalette] = useState<string[] | null>(null);
+  const [wordTransparency, setWordTransparency] = useState(0);
   const [boxStyle, setBoxStyle] = useState<InputBoxStyle>("membulat");
   const [inputColors, setInputColors] = useState<InputColors>(NO_INPUT_COLORS);
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT);
@@ -200,6 +201,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
     body.set("inputOverlay", String(inputOverlay));
     body.set("inputBoxStyle", boxStyle);
     if (palette) body.set("palette", JSON.stringify(palette));
+    if (wordTransparency > 0) body.set("wordTransparency", String(wordTransparency));
     if (inputColors.text) body.set("inputTextColor", inputColors.text);
     if (inputColors.field) body.set("inputFieldColor", inputColors.field);
     if (inputColors.fieldText) body.set("inputFieldTextColor", inputColors.fieldText);
@@ -242,6 +244,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
       photowallOverlay,
       inputOverlay,
       palette,
+      wordTransparency,
       inputBoxStyle: boxStyle,
       inputTextColor: inputColors.text,
       inputFieldColor: inputColors.field,
@@ -260,6 +263,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
     photowallOverlay,
     inputOverlay,
     palette,
+    wordTransparency,
     boxStyle,
     inputColors,
     prompt,
@@ -378,7 +382,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
                 >
                   <span
                     className="relative block h-24 overflow-hidden rounded-[10px] border border-line"
-                    style={{ background: photowallBackground(option.id, photowallColor) }}
+                    style={{ background: stageBackground(option.id, photowallColor) }}
                   >
                     {option.id === "foto" && photowallPreviewUrl ? (
                       <img src={photowallPreviewUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-75" />
@@ -455,7 +459,14 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
           </div>
 
           <div className="border-t border-line pt-4">
-            <PaletteField theme={photowallTheme} color={photowallColor} palette={palette} onChange={setPalette} />
+            <PaletteField
+              theme={photowallTheme}
+              color={photowallColor}
+              palette={palette}
+              transparency={wordTransparency}
+              onChange={setPalette}
+              onTransparencyChange={setWordTransparency}
+            />
           </div>
         </section>
 
@@ -466,7 +477,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               const selected = option.id === inputTheme;
               const swatch =
                 option.id === "warna"
-                  ? { background: inputColor, field: "#FFFFFF", fieldBorder: readableOn(inputColor) }
+                  ? { background: overBlack(inputColor), field: "#FFFFFF", fieldBorder: readableOn(inputColor) }
                   : inputSwatches[option.id];
               return (
                 <button

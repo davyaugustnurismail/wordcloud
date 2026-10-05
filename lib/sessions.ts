@@ -1,6 +1,7 @@
 import { randomInt } from "node:crypto";
 import { argon2id, hash, verify } from "argon2";
 import { eq, sql } from "drizzle-orm";
+import { openPin, sealPin } from "./auth/pin-vault";
 import { CODE_ALPHABET, CODE_LENGTH } from "./code";
 import { getDb } from "./db";
 import { sessions } from "./db/schema";
@@ -69,12 +70,13 @@ export async function createSession(input: {
 }): Promise<{ session: SessionRecord; pin: string }> {
   const pin = generatePin();
   const pinHash = await hash(pin, { type: argon2id });
+  const pinEncrypted = await sealPin(pin);
 
   for (let attempt = 0; attempt < MAX_CODE_ATTEMPTS; attempt++) {
     try {
       const [row] = await getDb()
         .insert(sessions)
-        .values({ code: generateCode(), name: input.name, pinHash, settings: input.settings })
+        .values({ code: generateCode(), name: input.name, pinHash, pinEncrypted, settings: input.settings })
         .returning();
       if (!row) throw new Error("Sesi gagal dibuat");
       return { session: toRecord(row), pin };
@@ -129,11 +131,22 @@ export async function applyControl(sessionId: string, action: ControlAction): Pr
 export async function resetSessionPin(sessionId: string): Promise<string> {
   const pin = generatePin();
   const pinHash = await hash(pin, { type: argon2id });
+  const pinEncrypted = await sealPin(pin);
   const [row] = await getDb()
     .update(sessions)
-    .set({ pinHash, adminEpoch: sql`${sessions.adminEpoch} + 1` })
+    .set({ pinHash, pinEncrypted, adminEpoch: sql`${sessions.adminEpoch} + 1` })
     .where(eq(sessions.id, sessionId))
     .returning({ id: sessions.id });
   if (!row) throw new Error("Sesi tidak ditemukan");
   return pin;
+}
+
+export async function readStoredPin(sessionId: string): Promise<string | null | undefined> {
+  const [row] = await getDb()
+    .select({ pinEncrypted: sessions.pinEncrypted })
+    .from(sessions)
+    .where(eq(sessions.id, sessionId))
+    .limit(1);
+  if (!row) return undefined;
+  return openPin(row.pinEncrypted);
 }

@@ -1,4 +1,4 @@
-import { isDarkColor } from "../color";
+import { isDarkColor, overBlack, scaleAlpha } from "../color";
 import type { PhotowallTheme } from "../settings";
 import { hash32 } from "./layout";
 
@@ -36,6 +36,10 @@ export function photowallBackground(theme: PhotowallTheme, color: string): strin
   return theme === "warna" ? color : photowallBackgrounds[theme];
 }
 
+export function stageBackground(theme: PhotowallTheme, color: string): string {
+  return overBlack(photowallBackground(theme, color));
+}
+
 export function paletteFor(
   theme: PhotowallTheme,
   custom: readonly string[] | null,
@@ -51,6 +55,11 @@ export function samePalette(a: readonly string[] | null, b: readonly string[] | 
   return a.every((color, index) => color.toLowerCase() === b[index]?.toLowerCase());
 }
 
-export function pickWordColor(palette: readonly string[], id: string): string {
-  return palette[hash32(id) % palette.length] ?? "#FFFFFF";
+export function wordOpacity(transparency: number): number {
+  return 1 - transparency / 100;
+}
+
+export function pickWordColor(palette: readonly string[], id: string, transparency = 0): string {
+  const color = palette[hash32(id) % palette.length] ?? "#FFFFFF";
+  return transparency > 0 ? scaleAlpha(color, wordOpacity(transparency)) : color;
 }
