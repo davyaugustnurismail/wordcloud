@@ -22,9 +22,13 @@ const createdAt = () => timestamp("created_at", { withTimezone: true }).notNull(
 export const sessions = pgTable("sessions", {
   id: uuid("id").primaryKey().defaultRandom(),
   code: varchar("code", { length: 6 }).notNull().unique(),
+  slug: varchar("slug", { length: 48 }).unique(),
   name: text("name").notNull(),
   pinHash: text("pin_hash").notNull(),
   pinEncrypted: text("pin_encrypted"),
+  inputPinEnabled: boolean("input_pin_enabled").notNull().default(false),
+  inputPinEncrypted: text("input_pin_encrypted"),
+  inputEpoch: integer("input_epoch").notNull().default(0),
   status: sessionStatus("status").notNull().default("active"),
   settings: jsonb("settings").$type<Record<string, unknown>>().notNull().default({}),
   paused: boolean("paused").notNull().default(false),
@@ -87,4 +91,15 @@ export const moderationLogs = pgTable("moderation_logs", {
 export const appSettings = pgTable("app_settings", {
   key: text("key").primaryKey(),
   value: jsonb("value").$type<unknown>().notNull(),
+});
+
+export const adminUsers = pgTable("admin_users", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  email: text("email").notNull().unique(),
+  name: text("name"),
+  googleSub: text("google_sub").unique(),
+  active: boolean("active").notNull().default(true),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  createdAt: createdAt(),
+  createdBy: text("created_by"),
 });

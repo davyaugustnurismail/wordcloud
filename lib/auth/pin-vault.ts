@@ -2,24 +2,31 @@ import { EncryptJWT, jwtDecrypt } from "jose";
 import { z } from "zod";
 import { secretKey } from "./secret";
 
-const AUDIENCE = "pin-vault";
+const ADMIN_AUDIENCE = "pin-vault";
+const INPUT_AUDIENCE = "input-pin-vault";
 
-const payloadSchema = z.object({ pin: z.string().regex(/^\d{6}$/) });
+const adminPinPattern = /^\d{6}$/;
+const inputPinPattern = /^\d{4,6}$/;
 
-export async function sealPin(pin: string): Promise<string> {
+async function seal(pin: string, audience: string): Promise<string> {
   return new EncryptJWT({ pin })
     .setProtectedHeader({ alg: "dir", enc: "A256GCM" })
-    .setAudience(AUDIENCE)
+    .setAudience(audience)
     .encrypt(secretKey());
 }
 
-export async function openPin(token: string | null | undefined): Promise<string | null> {
+async function open(token: string | null | undefined, audience: string, pattern: RegExp): Promise<string | null> {
   if (!token) return null;
   try {
-    const { payload } = await jwtDecrypt(token, secretKey(), { audience: AUDIENCE });
-    const parsed = payloadSchema.safeParse(payload);
+    const { payload } = await jwtDecrypt(token, secretKey(), { audience });
+    const parsed = z.object({ pin: z.string().regex(pattern) }).safeParse(payload);
     return parsed.success ? parsed.data.pin : null;
   } catch {
     return null;
   }
 }
+
+export const sealPin = (pin: string) => seal(pin, ADMIN_AUDIENCE);
+export const openPin = (token: string | null | undefined) => open(token, ADMIN_AUDIENCE, adminPinPattern);
+export const sealInputPin = (pin: string) => seal(pin, INPUT_AUDIENCE);
+export const openInputPin = (token: string | null | undefined) => open(token, INPUT_AUDIENCE, inputPinPattern);

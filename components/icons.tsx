@@ -283,3 +283,68 @@ export function SpinnerIcon({ strokeWidth = 2.5, ...props }: IconProps) {
     </Base>
   );
 }
+
+export function ExternalLinkIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M14 4h6v6M20 4l-9 9" />
+      <path d="M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4" />
+    </Base>
+  );
+}
+
+export function MoreIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="5" cy="12" r="1" />
+      <circle cx="12" cy="12" r="1" />
+      <circle cx="19" cy="12" r="1" />
+    </Base>
+  );
+}
+
+export function UsersIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="9" cy="8" r="3.5" />
+      <path d="M2.5 20a6.5 6.5 0 0 1 13 0" />
+      <path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18.5 14.2a6.5 6.5 0 0 1 3 5.8" />
+    </Base>
+  );
+}
+
+export function SearchIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <circle cx="11" cy="11" r="7" />
+      <path d="M20 20l-3.5-3.5" />
+    </Base>
+  );
+}
+
+export function LinkIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1" />
+      <path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1" />
+    </Base>
+  );
+}
+
+export function RefreshIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M20 11a8 8 0 0 0-14.6-4.4M4 4v4h4" />
+      <path d="M4 13a8 8 0 0 0 14.6 4.4M20 20v-4h-4" />
+    </Base>
+  );
+}
+
+export function FileIcon(props: IconProps) {
+  return (
+    <Base {...props}>
+      <path d="M6 3h8l4 4v14H6V3z" />
+      <path d="M14 3v4h4M9 13h6M9 17h6" />
+    </Base>
+  );
+}

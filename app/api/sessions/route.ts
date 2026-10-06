@@ -5,7 +5,8 @@ import { readyCookieName, readyCookieOptions, sealReadyToken } from "@/lib/auth/
 import { clientIp } from "@/lib/http";
 import { hitRateLimit } from "@/lib/rate-limit";
 import { getSessionDefaults, verifyCreatorPassword } from "@/lib/app-settings";
-import { createSession, updateSessionSettings } from "@/lib/sessions";
+import { checkSlugAvailability, createSession, sessionRef, SlugTakenError, updateSessionSettings } from "@/lib/sessions";
+import { slugProblem } from "@/lib/slug";
 import {
   defaultSettings,
   hexColor,
@@ -41,6 +42,7 @@ const optionalPalette = z.preprocess((value) => {
 
 const createSchema = z.object({
   name: z.string().trim().min(1).max(60),
+  slug: z.preprocess(blankToUndefined, z.string().trim().toLowerCase().max(80).optional()),
   password: z.string().min(1).max(200),
   moderationMode: z.enum(moderationModes).default("langsung"),
   photowallTheme: z.enum(photowallThemes),
@@ -83,6 +85,11 @@ export async function POST(request: Request) {
 
   const { password, photowallBgId, inputBgId, ...rest } = parsed.data;
   if (!(await verifyCreatorPassword(password))) return fail("password", 401);
+
+  if (rest.slug !== undefined) {
+    if (slugProblem(rest.slug) !== null) return fail("invalid_slug", 400);
+    if (!(await checkSlugAvailability(rest.slug)).available) return fail("slug_taken", 409);
+  }
 
   const photowallFile = form.get("photowallImage");
   const inputFile = form.get("inputImage");
@@ -127,7 +134,14 @@ export async function POST(request: Request) {
     }),
   };
 
-  const { session, pin } = await createSession({ name: rest.name, settings });
+  let created: Awaited<ReturnType<typeof createSession>>;
+  try {
+    created = await createSession({ name: rest.name, slug: rest.slug, settings });
+  } catch (err) {
+    if (err instanceof SlugTakenError) return fail("slug_taken", 409);
+    throw err;
+  }
+  const { session, pin } = created;
 
   if (photowallImage || inputImage) {
     if (photowallImage) {
@@ -139,7 +153,7 @@ export async function POST(request: Request) {
     await updateSessionSettings(session.id, settings);
   }
 
-  const response = NextResponse.json({ code: session.code }, { status: 201 });
+  const response = NextResponse.json({ code: session.code, ref: sessionRef(session) }, { status: 201 });
   response.cookies.set(
     readyCookieName(session.code),
     await sealReadyToken({ code: session.code, pin }),

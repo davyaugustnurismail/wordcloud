@@ -1,17 +1,11 @@
-import { notFound, redirect } from "next/navigation";
 import { ThemeSettings } from "@/components/admin/theme-settings";
 import { listLibraryAssetIds, listSessionAssetIds } from "@/lib/assets";
-import { hasAdminAccess } from "@/lib/auth/access";
-import { isValidCode, normalizeCode } from "@/lib/code";
-import { findSessionByCode } from "@/lib/sessions";
+import { loadSessionForAdmin } from "@/lib/session-page";
 
 export const dynamic = "force-dynamic";
 
-export default async function AdminThemePage({ params }: { params: Promise<{ code: string }> }) {
-  const code = normalizeCode((await params).code);
-  const session = isValidCode(code) ? await findSessionByCode(code) : null;
-  if (!session) notFound();
-  if (!(await hasAdminAccess(code))) redirect(`/masuk-admin?kode=${code}`);
+export default async function AdminThemePage({ params }: { params: Promise<{ ref: string }> }) {
+  const session = await loadSessionForAdmin((await params).ref);
 
   const [libraryPhotowall, libraryInput, ownPhotowall, ownInput] = await Promise.all([
     listLibraryAssetIds("photowall_bg"),
@@ -22,7 +16,7 @@ export default async function AdminThemePage({ params }: { params: Promise<{ cod
 
   return (
     <ThemeSettings
-      code={code}
+      code={session.code}
       library={{ photowall: libraryPhotowall, input: libraryInput }}
       own={{ photowall: ownPhotowall, input: ownInput }}
     />

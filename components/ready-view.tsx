@@ -2,16 +2,19 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { copyText } from "@/lib/clipboard";
 import { connectRealtime } from "@/lib/realtime/client";
 import type { PresencePayload } from "@/lib/realtime/events";
-import { ArrowRightIcon, CheckIcon, CopyIcon, EyeIcon, PlayIcon } from "./icons";
+import { ArrowRightIcon, EyeIcon, ExternalLinkIcon, PlayIcon } from "./icons";
+import { CopyButton } from "./ui/copy-button";
 
 type Props = {
   code: string;
+  sessionRef: string;
   name: string;
   pin: string;
   joinLabel: string;
+  inputUrl: string;
+  displayUrl: string;
   joinQr: string;
   adminQr: string;
 };
@@ -20,11 +23,48 @@ function formatPin(pin: string): string {
   return `${pin.slice(0, 3)} ${pin.slice(3)}`;
 }
 
-export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props) {
+function LinkRow({
+  label,
+  url,
+  copyLabel,
+  openLabel,
+}: {
+  label: string;
+  url: string;
+  copyLabel: string;
+  openLabel?: string;
+}) {
+  return (
+    <div className="flex items-center gap-2.5 rounded-[14px] bg-surface2 py-2.5 pl-4 pr-2.5">
+      <div className="flex min-w-0 flex-1 flex-col gap-0.5">
+        <span className="text-xs font-bold uppercase tracking-[0.08em] text-muted">{label}</span>
+        <span className="truncate font-mono text-sm font-bold">{url.split("://")[1] ?? url}</span>
+      </div>
+      <CopyButton
+        value={url}
+        label={copyLabel}
+        successMessage="Tautan tersalin"
+        className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-fg"
+      />
+      {openLabel ? (
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={openLabel}
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-line bg-surface text-fg"
+        >
+          <ExternalLinkIcon size={18} />
+        </a>
+      ) : null}
+    </div>
+  );
+}
+
+export function ReadyView({ code, sessionRef, name, pin, joinLabel, inputUrl, displayUrl, joinQr, adminQr }: Props) {
   const router = useRouter();
   const [presence, setPresence] = useState<PresencePayload>({ display: 0, input: 0, admin: 0 });
   const [showPin, setShowPin] = useState(false);
-  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const socket = connectRealtime({ code, role: "ready" });
@@ -34,20 +74,10 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
     };
   }, [code]);
 
-  useEffect(() => {
-    if (!copied) return;
-    const timer = setTimeout(() => setCopied(false), 1500);
-    return () => clearTimeout(timer);
-  }, [copied]);
-
-  const copyPin = async () => {
-    setCopied(await copyText(pin));
-  };
-
   const openAdmin = async () => {
     try {
       const response = await fetch(`/api/sessions/${code}/open-admin`, { method: "POST" });
-      router.push(response.ok ? `/s/${code}/admin` : `/masuk-admin?kode=${code}`);
+      router.push(response.ok ? `/s/${sessionRef}/admin` : `/masuk-admin?kode=${code}`);
     } catch {
       router.push(`/masuk-admin?kode=${code}`);
     }
@@ -57,7 +87,7 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
     try {
       await document.documentElement.requestFullscreen?.();
     } catch {}
-    router.push(`/s/${code}/display`);
+    router.push(`/s/${sessionRef}/display`);
   };
 
   const live = presence.display > 0;
@@ -121,6 +151,14 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
                 <li>Kode tanpa huruf ambigu: tidak ada O, 0, I, atau 1.</li>
               </ol>
             </div>
+            <div className="flex flex-col gap-2.5 border-t border-line pt-5">
+              <h3 className="m-0 text-[15px] font-extrabold">Tautan sesi</h3>
+              <LinkRow label="Halaman input" url={inputUrl} copyLabel="Salin tautan input" />
+              <LinkRow label="Photowall" url={displayUrl} copyLabel="Salin tautan photowall" openLabel="Buka photowall di tab baru" />
+              <p className="m-0 text-[13px] leading-normal text-muted">
+                Alamat bisa diubah dan halaman input bisa dikunci PIN dari admin sesi, tab Akses &amp; tautan.
+              </p>
+            </div>
           </section>
 
           <section className="flex min-w-0 flex-[1_1_340px] flex-col gap-[18px] rounded-[20px] border border-line bg-surface p-7">
@@ -154,17 +192,12 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
                   >
                     <EyeIcon size={20} />
                   </button>
-                  <button
-                    type="button"
-                    onClick={copyPin}
-                    aria-label="Salin PIN"
+                  <CopyButton
+                    value={pin}
+                    label="Salin PIN"
+                    successMessage="PIN admin tersalin"
                     className="flex h-11 w-11 items-center justify-center rounded-xl border border-line bg-surface text-fg"
-                  >
-                    {copied ? <CheckIcon size={20} /> : <CopyIcon size={20} />}
-                  </button>
-                  <span role="status" className="sr-only">
-                    {copied ? "PIN tersalin" : ""}
-                  </span>
+                  />
                 </div>
               </div>
             </div>
@@ -205,6 +238,15 @@ export function ReadyView({ code, name, pin, joinLabel, joinQr, adminQr }: Props
           <p className="m-0 text-center text-sm text-muted">
             Masuk fullscreen, kursor disembunyikan, dan layar dijaga tetap menyala (Wake Lock).
           </p>
+          <a
+            href={displayUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="flex h-12 items-center justify-center gap-2 self-center rounded-xl border border-line px-5 text-[15px] font-bold text-fg"
+          >
+            <ExternalLinkIcon size={18} />
+            Buka photowall di tab baru
+          </a>
         </div>
       </div>
     </main>

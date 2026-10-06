@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { isValidCode, normalizeCode } from "@/lib/code";
 import { clientIp } from "@/lib/http";
 import { hitRateLimit } from "@/lib/rate-limit";
-import { findSessionByCode } from "@/lib/sessions";
+import { findSessionByCode, sessionRef } from "@/lib/sessions";
 
 export const dynamic = "force-dynamic";
 
@@ -21,5 +21,5 @@ export async function GET(request: Request, context: { params: Promise<{ code: s
   if (!session) {
     return NextResponse.json({ error: "not_found" }, { status: 404 });
   }
-  return NextResponse.json({ ok: true, code: session.code });
+  return NextResponse.json({ ok: true, code: session.code, ref: sessionRef(session) });
 }

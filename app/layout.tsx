@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { Baloo_2, Fredoka, JetBrains_Mono, Plus_Jakarta_Sans, Poppins } from "next/font/google";
+import { ToastProvider } from "@/components/ui/toast";
 import { ViewportScale } from "@/components/viewport-scale";
 import { applyViewportScale } from "@/lib/viewport-scale";
 import "./globals.css";
@@ -11,7 +12,7 @@ const poppins = Poppins({ subsets: ["latin"], weight: "800", variable: "--font-p
 const fredoka = Fredoka({ subsets: ["latin"], weight: "700", variable: "--font-fredoka", display: "swap" });
 
 export const metadata: Metadata = {
-  title: "Wordcloud Photowall",
+  title: { default: "Wordcloud Photowall", template: "%s · Wordcloud Photowall" },
 };
 
 export const viewport: Viewport = {
@@ -36,7 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       </head>
       <body className="min-h-view antialiased">
         <ViewportScale />
-        {children}
+        <ToastProvider>{children}</ToastProvider>
       </body>
     </html>
   );

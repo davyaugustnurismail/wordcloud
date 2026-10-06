@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import { demoEntries } from "@/lib/demo-words";
+import { cleanSlugInput, slugify } from "@/lib/slug";
 import { checkImageFile } from "@/lib/image-file";
 import { overBlack, readableOn } from "@/lib/color";
 import { baseTokensFor, inputBoxSpecs } from "@/lib/input-themes";
@@ -25,6 +26,7 @@ import { InputPreview } from "./admin/input-preview";
 import { PhotowallPreview } from "./admin/photowall-preview";
 import { RangeField } from "./admin/settings-fields";
 import { BackgroundPicker } from "./background-picker";
+import { slugStatusMessage, useSlugAvailability } from "./use-slug-availability";
 import { AlertCircleIcon, ArrowRightIcon, CheckIcon, ChevronLeftIcon, LockIcon, SpinnerIcon } from "./icons";
 import { BoxStyleField, ColorField, PaletteField } from "./theme-controls";
 
@@ -115,6 +117,7 @@ function OptionFooter({ label, selected }: { label: string; selected: boolean })
 
 function errorMessage(status: number): string {
   if (status === 401) return "Password pembuat sesi salah.";
+  if (status === 409) return "Alamat sesi sudah dipakai. Pilih alamat lain.";
   if (status === 413) return "Gambar terlalu besar. Maksimal 10 MB.";
   if (status === 429) return "Terlalu banyak percobaan. Coba lagi sebentar.";
   if (status === 400) return "Periksa kembali isian form dan gambar latar.";
@@ -129,6 +132,9 @@ function backgroundUrl(background: Background): string | null {
 export function CreateForm({ library, defaults }: { library: Library; defaults: SessionDefaults }) {
   const router = useRouter();
   const [name, setName] = useState("");
+  const [slug, setSlug] = useState("");
+  const [slugEdited, setSlugEdited] = useState(false);
+  const [host, setHost] = useState("");
   const [password, setPassword] = useState("");
   const [moderation, setModeration] = useState<ModerationMode>(defaults.moderationMode);
   const [photowallTheme, setPhotowallTheme] = useState<PhotowallTheme>(defaults.photowallTheme);
@@ -154,6 +160,21 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const objectUrls = useRef<string[]>([]);
+
+  useEffect(() => {
+    setHost(window.location.host);
+  }, []);
+
+  const slugStatus = useSlugAvailability(slug);
+  const slugMessage = slugStatusMessage(slugStatus);
+
+  const changeName = (value: string) => {
+    setName(value);
+    if (!slugEdited) {
+      const suggestion = slugify(value);
+      setSlug(suggestion.length >= 3 ? suggestion : "");
+    }
+  };
 
   useEffect(() => {
     const urls = objectUrls.current;
@@ -184,11 +205,17 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
       return;
     }
 
+    if (slug && slugStatus.state === "unavailable") {
+      setError("Alamat sesi belum valid. Periksa kolom Alamat sesi.");
+      return;
+    }
+
     setSubmitting(true);
     setError(null);
 
     const body = new FormData();
     body.set("name", name);
+    if (slug) body.set("slug", slug);
     body.set("password", password);
     body.set("moderationMode", moderation);
     body.set("photowallTheme", photowallTheme);
@@ -219,8 +246,8 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
         setSubmitting(false);
         return;
       }
-      const { code } = (await response.json()) as { code: string };
-      router.push(`/s/${code}/ready`);
+      const { code, ref } = (await response.json()) as { code: string; ref?: string };
+      router.push(`/s/${ref ?? code}/ready`);
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
       setSubmitting(false);
@@ -301,7 +328,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
                 required
                 maxLength={60}
                 value={name}
-                onChange={(event) => setName(event.target.value)}
+                onChange={(event) => changeName(event.target.value)}
                 placeholder="Nama sesi"
                 autoComplete="off"
                 className={fieldClass}
@@ -325,6 +352,38 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
                 Diatur oleh admin global.
               </span>
             </div>
+          </div>
+          <div className="flex flex-col gap-2">
+            <label htmlFor="alamat-sesi" className="text-sm font-bold">
+              Alamat sesi
+            </label>
+            <div className="flex min-w-0 items-center rounded-xl border border-line bg-field focus-within:border-ring">
+              <span className="shrink-0 truncate pl-3.5 text-[15px] font-semibold text-muted">{host || "…"}/s/</span>
+              <input
+                id="alamat-sesi"
+                type="text"
+                value={slug}
+                maxLength={40}
+                onChange={(event) => {
+                  setSlugEdited(true);
+                  setSlug(cleanSlugInput(event.target.value));
+                }}
+                placeholder="acara-kantor"
+                autoComplete="off"
+                autoCapitalize="none"
+                spellCheck={false}
+                aria-describedby="alamat-bantu"
+                className="box-border h-[50px] min-w-0 flex-1 border-0 bg-transparent pr-3.5 pl-0.5 text-[17px] font-semibold text-fg focus:outline-none"
+              />
+            </div>
+            <span
+              id="alamat-bantu"
+              className={`text-[13px] ${
+                slugMessage?.tone === "bad" ? "font-bold text-danger" : slugMessage?.tone === "ok" ? "font-bold text-live" : "text-muted"
+              }`}
+            >
+              {slugMessage?.text ?? "Dipakai di tautan halaman input dan photowall. Kosongkan untuk dibuat otomatis dari nama. Bisa diubah lagi dari admin sesi."}
+            </span>
           </div>
         </section>
 
@@ -414,49 +473,52 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
             />
           </div>
 
-          <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
-            <ColorField
-              id="warna-photowall"
-              label="Warna latar photowall"
-              value={photowallColor}
-              fallback={photowallColor}
-              onChange={setPhotowallColor}
-              hint="Dipakai saat tema Warna."
-            />
-          </div>
-
-          <div className="flex flex-col gap-2.5 border-t border-line pt-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-1.5">
-              <span className="text-[15px] font-bold">Gambar latar photowall</span>
-              <span className="text-[13px] text-muted">Dipakai saat tema Foto. JPG/PNG, dikompres ke lebar 1920 px.</span>
-            </div>
-            <BackgroundPicker
-              ids={library.photowall}
-              selectedId={photowallBg?.type === "library" ? photowallBg.id : null}
-              localPreview={photowallBg?.type === "file" ? photowallBg.url : null}
-              size="lg"
-              ariaSubject="photowall"
-              uploadLabel="Upload foto latar photowall"
-              error={photowallBgError}
-              onSelectId={(id) => {
-                setPhotowallBgError(null);
-                setPhotowallBg({ type: "library", id });
-              }}
-              onPickFile={(file) => pickFile(file, setPhotowallBg, setPhotowallBgError)}
-            />
-            <div className="sm:max-w-[360px]">
-              <RangeField
-                id="overlay-photowall"
-                label="Overlay gelap"
-                display={`${photowallOverlay}%`}
-                min={0}
-                max={85}
-                step={5}
-                value={photowallOverlay}
-                onChange={setPhotowallOverlay}
+          {photowallTheme === "warna" ? (
+            <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
+              <ColorField
+                id="warna-photowall"
+                label="Warna latar photowall"
+                value={photowallColor}
+                fallback={photowallColor}
+                onChange={setPhotowallColor}
               />
             </div>
-          </div>
+          ) : null}
+
+          {photowallTheme === "foto" ? (
+            <div className="flex flex-col gap-2.5 border-t border-line pt-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-1.5">
+                <span className="text-[15px] font-bold">Gambar latar photowall</span>
+                <span className="text-[13px] text-muted">JPG/PNG, dikompres ke lebar 1920 px.</span>
+              </div>
+              <BackgroundPicker
+                ids={library.photowall}
+                selectedId={photowallBg?.type === "library" ? photowallBg.id : null}
+                localPreview={photowallBg?.type === "file" ? photowallBg.url : null}
+                size="lg"
+                ariaSubject="photowall"
+                uploadLabel="Upload foto latar photowall"
+                error={photowallBgError}
+                onSelectId={(id) => {
+                  setPhotowallBgError(null);
+                  setPhotowallBg({ type: "library", id });
+                }}
+                onPickFile={(file) => pickFile(file, setPhotowallBg, setPhotowallBgError)}
+              />
+              <div className="sm:max-w-[360px]">
+                <RangeField
+                  id="overlay-photowall"
+                  label="Overlay gelap"
+                  display={`${photowallOverlay}%`}
+                  min={0}
+                  max={85}
+                  step={5}
+                  value={photowallOverlay}
+                  onChange={setPhotowallOverlay}
+                />
+              </div>
+            </div>
+          ) : null}
 
           <div className="border-t border-line pt-4">
             <PaletteField
@@ -517,49 +579,51 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
             <InputPreview settings={previewSettings} backgroundUrl={inputPreviewUrl} scale={0.62} />
           </div>
 
-          <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
-            <ColorField
-              id="warna-input"
-              label="Warna latar input"
-              value={inputColor}
-              fallback={inputColor}
-              onChange={setInputColor}
-              hint="Dipakai saat tema Warna."
-            />
-          </div>
-
-          <div className="flex flex-col gap-2.5 border-t border-line pt-4">
-            <div className="flex flex-wrap items-baseline justify-between gap-1.5">
-              <span className="text-[15px] font-bold">Gambar latar input</span>
-              <span className="text-[13px] text-muted">Dipakai saat tema Foto.</span>
-            </div>
-            <BackgroundPicker
-              ids={library.input}
-              selectedId={inputBg?.type === "library" ? inputBg.id : null}
-              localPreview={inputBg?.type === "file" ? inputBg.url : null}
-              size="lg"
-              ariaSubject="input"
-              uploadLabel="Upload foto latar input"
-              error={inputBgError}
-              onSelectId={(id) => {
-                setInputBgError(null);
-                setInputBg({ type: "library", id });
-              }}
-              onPickFile={(file) => pickFile(file, setInputBg, setInputBgError)}
-            />
-            <div className="sm:max-w-[360px]">
-              <RangeField
-                id="overlay-input"
-                label="Overlay gelap input"
-                display={`${inputOverlay}%`}
-                min={0}
-                max={85}
-                step={5}
-                value={inputOverlay}
-                onChange={setInputOverlay}
+          {inputTheme === "warna" ? (
+            <div className="flex flex-col gap-2.5 sm:max-w-[360px]">
+              <ColorField
+                id="warna-input"
+                label="Warna latar input"
+                value={inputColor}
+                fallback={inputColor}
+                onChange={setInputColor}
               />
             </div>
-          </div>
+          ) : null}
+
+          {inputTheme === "foto" ? (
+            <div className="flex flex-col gap-2.5 border-t border-line pt-4">
+              <div className="flex flex-wrap items-baseline justify-between gap-1.5">
+                <span className="text-[15px] font-bold">Gambar latar input</span>
+              </div>
+              <BackgroundPicker
+                ids={library.input}
+                selectedId={inputBg?.type === "library" ? inputBg.id : null}
+                localPreview={inputBg?.type === "file" ? inputBg.url : null}
+                size="lg"
+                ariaSubject="input"
+                uploadLabel="Upload foto latar input"
+                error={inputBgError}
+                onSelectId={(id) => {
+                  setInputBgError(null);
+                  setInputBg({ type: "library", id });
+                }}
+                onPickFile={(file) => pickFile(file, setInputBg, setInputBgError)}
+              />
+              <div className="sm:max-w-[360px]">
+                <RangeField
+                  id="overlay-input"
+                  label="Overlay gelap input"
+                  display={`${inputOverlay}%`}
+                  min={0}
+                  max={85}
+                  step={5}
+                  value={inputOverlay}
+                  onChange={setInputOverlay}
+                />
+              </div>
+            </div>
+          ) : null}
 
           <div className="border-t border-line pt-4">
             <BoxStyleField
@@ -685,7 +749,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
           </div>
         ) : null}
 
-        <div className="flex flex-wrap justify-end gap-3">
+        <div className="sticky bottom-0 z-20 flex flex-wrap justify-end gap-3 border-t border-line bg-bg py-3">
           <Link
             href="/"
             className="flex h-14 items-center justify-center rounded-[14px] border border-line px-6 text-base font-bold text-fg"

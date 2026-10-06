@@ -33,7 +33,8 @@ export function JoinForm() {
         setLoading(false);
         return;
       }
-      router.push(`/s/${code}/input`);
+      const body = (await response.json().catch(() => ({}))) as { ref?: string };
+      router.push(`/s/${body.ref ?? code}/input`);
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
       setLoading(false);

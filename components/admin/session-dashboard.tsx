@@ -5,6 +5,8 @@ import { clockLabel, fillBuckets, peakOf } from "@/lib/chart";
 import { downloadSessionPng } from "@/lib/png-download";
 import type { SessionStats } from "@/lib/stats";
 import { AlertCircleIcon, DownloadIcon, SpinnerIcon } from "../icons";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { useToast } from "../ui/toast";
 import { useAdmin } from "./admin-provider";
 import { FiveMinuteChart, TopWords } from "./charts";
 import { PhotowallPreview } from "./photowall-preview";
@@ -45,6 +47,8 @@ export function SessionDashboard() {
   const [pngBusy, setPngBusy] = useState(false);
   const [pngError, setPngError] = useState<string | null>(null);
   const [confirmEnd, setConfirmEnd] = useState(false);
+  const [ending, setEnding] = useState(false);
+  const toast = useToast();
 
   const loadStats = useCallback(async () => {
     try {
@@ -108,8 +112,12 @@ export function SessionDashboard() {
   };
 
   const end = async () => {
-    await actions.control("end");
+    setEnding(true);
+    const ack = await actions.control("end");
+    setEnding(false);
     setConfirmEnd(false);
+    if (ack.ok) toast.success("Sesi diakhiri. Data tetap bisa diunduh.");
+    else toast.error("Sesi gagal diakhiri. Periksa koneksi lalu coba lagi.");
   };
 
   const modeNote = settings.moderationMode === "approve" ? "mode Approve aktif" : "mode Langsung aktif";
@@ -170,36 +178,16 @@ export function SessionDashboard() {
           )}
         </div>
 
-        {confirmEnd ? (
-          <div
-            role="alertdialog"
-            aria-label="Konfirmasi akhiri sesi"
-            className="flex flex-wrap items-center justify-between gap-3.5 rounded-[14px] border border-danger bg-danger/10 px-[18px] py-4"
-          >
-            <div className="flex flex-col gap-0.5">
-              <span className="text-[15px] font-extrabold">Akhiri sesi sekarang?</span>
-              <span className="text-sm text-muted">
-                Device input berhenti menerima kata untuk selamanya. Data tetap tersimpan dan bisa diunduh.
-              </span>
-            </div>
-            <div className="flex gap-2">
-              <button
-                type="button"
-                onClick={() => setConfirmEnd(false)}
-                className="h-11 rounded-xl border border-line bg-surface px-4 text-sm font-bold text-fg"
-              >
-                Batal
-              </button>
-              <button
-                type="button"
-                onClick={end}
-                className="h-11 rounded-xl border-0 bg-danger-solid px-4 text-sm font-extrabold text-white"
-              >
-                Ya, akhiri
-              </button>
-            </div>
-          </div>
-        ) : null}
+        <ConfirmDialog
+          open={confirmEnd}
+          title="Akhiri sesi sekarang?"
+          description="Device input berhenti menerima kata untuk selamanya. Data tetap tersimpan dan bisa diunduh."
+          confirmLabel="Ya, akhiri"
+          tone="danger"
+          busy={ending}
+          onConfirm={end}
+          onCancel={() => setConfirmEnd(false)}
+        />
 
         <div className="flex flex-wrap gap-4">
           <div className="flex min-w-0 flex-[999_1_520px] flex-wrap items-center gap-5 rounded-[14px] bg-surface2 p-4">

@@ -2,7 +2,9 @@
 
 import { useState, type FormEvent } from "react";
 import { checkWord, normalizeWord } from "@/lib/words";
+import { BlocklistImport } from "../blocklist-import";
 import { AlertCircleIcon, LockIcon, PlusIcon, XIcon } from "../icons";
+import { useToast } from "../ui/toast";
 
 type Props = {
   code: string;
@@ -19,6 +21,7 @@ function requestError(status: number): string {
 }
 
 export function BlocklistManager({ code, initialTerms, globalTerms }: Props) {
+  const toast = useToast();
   const [terms, setTerms] = useState(initialTerms);
   const [draft, setDraft] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -41,6 +44,7 @@ export function BlocklistManager({ code, initialTerms, globalTerms }: Props) {
       }
       const result = (await response.json()) as { terms: string[] };
       setTerms(result.terms);
+      toast.success(method === "POST" ? `"${term}" ditambahkan ke blocklist.` : `"${term}" dihapus dari blocklist.`);
       return true;
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
@@ -106,6 +110,12 @@ export function BlocklistManager({ code, initialTerms, globalTerms }: Props) {
             {error}
           </span>
         ) : null}
+        <BlocklistImport
+          endpoint={`/api/sessions/${code}/blocklist/import`}
+          target="Blocklist sesi ini"
+          disabled={busy}
+          onImported={setTerms}
+        />
         <div className="flex flex-col gap-2.5">
           <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-muted">
             {terms.length} kata di sesi ini
@@ -165,7 +175,7 @@ export function BlocklistManager({ code, initialTerms, globalTerms }: Props) {
           <h2 className="m-0 text-[15px] font-extrabold">Cara kerja</h2>
           <ul className="m-0 flex list-disc flex-col gap-2 pl-[18px] text-sm leading-normal">
             <li>Dicocokkan setelah huruf kecil, jadi &quot;Kasar&quot; dan &quot;kasar&quot; sama.</li>
-            <li>Audiens hanya melihat pesan &quot;Coba kata lain ya&quot;.</li>
+            <li>Audiens yang mengetik kata ini melihat jendela peringatan bahwa kata itu terlarang.</li>
             <li>Kata yang sudah tampil tidak hilang otomatis. Sembunyikan dari Live feed.</li>
           </ul>
         </section>

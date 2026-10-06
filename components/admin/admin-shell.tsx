@@ -2,9 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import type { ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { BrandLogo } from "../brand-logo";
 import {
   BanIcon,
+  ExternalLinkIcon,
   FreezeIcon,
   PauseIcon,
   PhoneIcon,
@@ -16,6 +18,8 @@ import {
   WifiOffIcon,
 } from "../icons";
 import { ThemeToggle } from "../theme-toggle";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { useToast } from "../ui/toast";
 import { useAdmin } from "./admin-provider";
 
 function useStatus() {
@@ -28,14 +32,15 @@ function useStatus() {
 }
 
 function Header() {
-  const { code, name, presence } = useAdmin();
+  const { ref, code, name, presence } = useAdmin();
   const status = useStatus();
 
   return (
     <header className="border-b border-line px-[18px] pb-3 pt-3.5 md:px-8 md:py-3.5">
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
         <div className="flex min-w-0 items-center gap-2.5 md:gap-3.5">
-          <Link href={`/s/${code}/admin`} className="truncate text-lg font-extrabold">
+          <BrandLogo height={34} className="hidden shrink-0 md:inline-flex" />
+          <Link href={`/s/${ref}/admin`} className="truncate text-lg font-extrabold">
             {name}
           </Link>
           <span className="flex h-[26px] items-center rounded-[7px] bg-surface2 px-2 font-mono text-[13px] font-bold tracking-[0.06em] md:h-[30px] md:rounded-lg md:px-2.5 md:text-[15px] md:tracking-[0.08em]">
@@ -63,6 +68,16 @@ function Header() {
               Admin <b className="text-fg">{presence.admin}</b>
             </span>
           </div>
+          <a
+            href={`/s/${ref}/display`}
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Buka photowall di tab baru"
+            className="flex h-10 items-center justify-center gap-2 rounded-full border border-line bg-surface px-0 text-sm font-bold text-fg max-md:w-10 md:px-3.5"
+          >
+            <ExternalLinkIcon size={18} />
+            <span className="hidden md:inline">Photowall</span>
+          </a>
           <ThemeToggle iconOnly />
         </div>
       </div>
@@ -80,16 +95,22 @@ function Header() {
 }
 
 function Tabs() {
-  const { code } = useAdmin();
+  const { ref } = useAdmin();
   const pathname = usePathname();
-  const base = `/s/${code}/admin`;
+  const activeRef = useRef<HTMLAnchorElement>(null);
+  const base = `/s/${ref}/admin`;
   const tabs = [
     { href: base, label: "Live & moderasi" },
     { href: `${base}/tema`, label: "Tema & tampilan" },
     { href: `${base}/blocklist`, label: "Blocklist" },
+    { href: `${base}/akses`, label: "Akses & tautan" },
     { href: `${base}/dashboard`, label: "Dashboard" },
     { href: `${base}/dashboard#unduh`, label: "Hasil & unduh" },
   ];
+
+  useEffect(() => {
+    activeRef.current?.scrollIntoView({ inline: "center", block: "nearest" });
+  }, [pathname]);
 
   return (
     <nav aria-label="Menu admin sesi" className="flex gap-1 overflow-x-auto border-b border-line px-3 md:px-7">
@@ -98,6 +119,7 @@ function Tabs() {
         return (
           <Link
             key={tab.href}
+            ref={active ? activeRef : undefined}
             href={tab.href}
             aria-current={active ? "page" : undefined}
             className={`flex h-[50px] shrink-0 items-center whitespace-nowrap border-b-[3px] px-3.5 text-[15px] ${
@@ -114,49 +136,36 @@ function Tabs() {
 
 function ClearDialog() {
   const { clearConfirm, setClearConfirm, actions } = useAdmin();
-  if (!clearConfirm) return null;
+  const toast = useToast();
+  const [busy, setBusy] = useState(false);
 
   const confirm = async () => {
-    await actions.control("clear");
+    setBusy(true);
+    const ack = await actions.control("clear");
+    setBusy(false);
     setClearConfirm(false);
+    if (ack.ok) toast.success("Photowall di-clear.");
+    else toast.error("Clear gagal. Periksa koneksi lalu coba lagi.");
   };
 
   return (
-    <div className="px-4 pt-5 md:px-8">
-      <div
-        role="alertdialog"
-        aria-label="Konfirmasi clear"
-        className="flex flex-wrap items-center justify-between gap-3.5 rounded-[14px] border border-danger bg-danger/10 px-[18px] py-4"
-      >
-        <div className="flex flex-col gap-0.5">
-          <span className="text-[15px] font-extrabold">Clear photowall sekarang?</span>
-          <span className="text-sm text-muted">Semua kata hilang dari layar. Data tetap tersimpan dan bisa diunduh.</span>
-        </div>
-        <div className="flex gap-2">
-          <button
-            type="button"
-            onClick={() => setClearConfirm(false)}
-            className="h-11 rounded-xl border border-line bg-surface px-4 text-sm font-bold text-fg"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={confirm}
-            className="h-11 rounded-xl border-0 bg-danger-solid px-4 text-sm font-extrabold text-white"
-          >
-            Ya, clear
-          </button>
-        </div>
-      </div>
-    </div>
+    <ConfirmDialog
+      open={clearConfirm}
+      title="Clear photowall sekarang?"
+      description="Semua kata hilang dari layar. Data tetap tersimpan dan bisa diunduh."
+      confirmLabel="Ya, clear"
+      tone="danger"
+      busy={busy}
+      onConfirm={confirm}
+      onCancel={() => setClearConfirm(false)}
+    />
   );
 }
 
 function MobileNav() {
-  const { code, connected, state, actions, setClearConfirm } = useAdmin();
+  const { ref, connected, state, actions, setClearConfirm } = useAdmin();
   const pathname = usePathname();
-  const base = `/s/${code}/admin`;
+  const base = `/s/${ref}/admin`;
   const temaActive = pathname === `${base}/tema`;
   const blocklistActive = pathname === `${base}/blocklist`;
   const item = "flex h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-xs font-bold disabled:opacity-50";

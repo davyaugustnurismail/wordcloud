@@ -2,8 +2,10 @@ import type { Server as HttpServer } from "node:http";
 import { createAdapter } from "@socket.io/redis-adapter";
 import { Server } from "socket.io";
 import { adminCookieName, verifyAdminToken } from "../auth/admin-cookie";
-import { GLOBAL_COOKIE_NAME, verifyGlobalToken } from "../auth/global-cookie";
 import { parseCookieHeader } from "../auth/cookies";
+import { GLOBAL_COOKIE_NAME } from "../auth/global-cookie";
+import { resolveGlobalAccess } from "../auth/global-access";
+import { inputCookieName, verifyInputToken } from "../auth/input-cookie";
 import { openReadyToken, readyCookieName } from "../auth/ready-cookie";
 import { isValidCode, normalizeCode } from "../code";
 import { getEnv } from "../env";
@@ -72,8 +74,13 @@ export function attachRealtime(httpServer: HttpServer): RealtimeServer {
       }
       if (parsed.data.role === "admin") {
         const allowed =
-          (await verifyGlobalToken(cookies[GLOBAL_COOKIE_NAME])) ||
+          (await resolveGlobalAccess(cookies[GLOBAL_COOKIE_NAME])) !== null ||
           (await verifyAdminToken(cookies[adminCookieName(code)], code, session.adminEpoch));
+        if (!allowed) return next(new Error("unauthorized"));
+      }
+
+      if (parsed.data.role === "input" && session.inputPinEnabled) {
+        const allowed = await verifyInputToken(cookies[inputCookieName(code)], code, session.inputEpoch);
         if (!allowed) return next(new Error("unauthorized"));
       }
 

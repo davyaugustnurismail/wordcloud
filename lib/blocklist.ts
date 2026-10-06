@@ -77,3 +77,18 @@ export async function removeTerm(sessionId: string | null, term: string): Promis
     .returning({ id: blockedTerms.id });
   return rows.length > 0;
 }
+
+const INSERT_CHUNK = 500;
+
+export async function addTerms(sessionId: string | null, terms: string[]): Promise<number> {
+  let added = 0;
+  for (let start = 0; start < terms.length; start += INSERT_CHUNK) {
+    const rows = await getDb()
+      .insert(blockedTerms)
+      .values(terms.slice(start, start + INSERT_CHUNK).map((term) => ({ term, sessionId })))
+      .onConflictDoNothing()
+      .returning({ id: blockedTerms.id });
+    added += rows.length;
+  }
+  return added;
+}

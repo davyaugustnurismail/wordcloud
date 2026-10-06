@@ -1,13 +1,27 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { clockLabel, fillBuckets, type Bucket } from "@/lib/chart";
 import { copyText } from "@/lib/clipboard";
 import { downloadSessionPng } from "@/lib/png-download";
 import type { GlobalStats, SessionOverview } from "@/lib/stats";
 import { HourlyChart, TopWords } from "../admin/charts";
-import { CheckIcon, CopyIcon, DownloadIcon, EyeIcon, EyeOffIcon, SpinnerIcon } from "../icons";
+import {
+  CheckIcon,
+  CopyIcon,
+  DownloadIcon,
+  ExternalLinkIcon,
+  EyeIcon,
+  EyeOffIcon,
+  LinkIcon,
+  RefreshIcon,
+  SearchIcon,
+  SpinnerIcon,
+} from "../icons";
+import { ActionMenu, menuItemClass } from "../ui/action-menu";
+import { ConfirmDialog } from "../ui/confirm-dialog";
+import { useToast } from "../ui/toast";
 import { AutoRefresh } from "./auto-refresh";
 
 type Filter = "semua" | "aktif" | "selesai";
@@ -16,7 +30,7 @@ const HOUR_MS = 3_600_000;
 const HOUR_WINDOW = 8;
 const REFRESH_MS = 15_000;
 const PIN_VISIBLE_MS = 20_000;
-const COLUMNS = "minmax(130px, 1.5fr) 90px 148px 84px 90px 52px 140px 250px";
+const COLUMNS = "xl:grid-cols-[minmax(200px,1.8fr)_84px_148px_84px_84px_52px_232px]";
 
 const filters: { id: Filter; label: string }[] = [
   { id: "semua", label: "Semua" },
@@ -46,6 +60,7 @@ function formatPin(pin: string): string {
 }
 
 function PinCell({ session }: { session: SessionOverview }) {
+  const toast = useToast();
   const [state, setState] = useState<PinState>("hidden");
   const [pin, setPin] = useState("");
   const [copied, setCopied] = useState(false);
@@ -89,6 +104,13 @@ function PinCell({ session }: { session: SessionOverview }) {
     setState("hidden");
   };
 
+  const copyPin = async () => {
+    const ok = await copyText(pin);
+    setCopied(ok);
+    if (ok) toast.success("PIN admin tersalin.");
+    else toast.error("Tidak bisa menyalin PIN.");
+  };
+
   if (state === "missing") {
     return (
       <span
@@ -111,12 +133,7 @@ function PinCell({ session }: { session: SessionOverview }) {
           <button type="button" onClick={hide} aria-label={`Sembunyikan PIN sesi ${session.name}`} className={iconButton}>
             <EyeOffIcon size={16} />
           </button>
-          <button
-            type="button"
-            onClick={async () => setCopied(await copyText(pin))}
-            aria-label={`Salin PIN sesi ${session.name}`}
-            className={iconButton}
-          >
+          <button type="button" onClick={copyPin} aria-label={`Salin PIN sesi ${session.name}`} className={iconButton}>
             {copied ? <CheckIcon size={16} /> : <CopyIcon size={16} />}
           </button>
         </>
@@ -135,6 +152,27 @@ function PinCell({ session }: { session: SessionOverview }) {
   );
 }
 
+function MetaItem({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <span className="flex items-center gap-1.5 xl:contents">
+      <span className="text-xs font-bold uppercase tracking-[0.06em] text-muted xl:hidden">{label}</span>
+      {children}
+    </span>
+  );
+}
+
+function StatusChip({ active, className = "" }: { active: boolean; className?: string }) {
+  return (
+    <span
+      className={`inline-flex h-[26px] shrink-0 items-center rounded-full px-2.5 text-xs font-extrabold ${
+        active ? "bg-live/15 text-live" : "bg-fg/10 text-muted"
+      } ${className}`}
+    >
+      {active ? "Aktif" : "Selesai"}
+    </span>
+  );
+}
+
 function SessionRow({
   session,
   pinVersion,
@@ -146,94 +184,156 @@ function SessionRow({
   onResetPin: (session: SessionOverview) => void;
   resetting: boolean;
 }) {
+  const toast = useToast();
   const [pngBusy, setPngBusy] = useState(false);
   const active = session.status === "active";
-  const menuLink = "flex h-10 items-center rounded-lg px-3 text-sm font-bold text-fg hover:bg-surface2";
+  const ref = session.slug ?? session.code;
 
   const png = async () => {
     setPngBusy(true);
     try {
       await downloadSessionPng(session.code);
+    } catch {
+      toast.error("PNG gagal dibuat. Coba lagi.");
     } finally {
       setPngBusy(false);
     }
   };
 
+  const copyInputLink = async () => {
+    const ok = await copyText(`${window.location.origin}/s/${ref}/input`);
+    if (ok) toast.success("Tautan input tersalin.");
+    else toast.error("Tidak bisa menyalin tautan.");
+  };
+
   return (
     <div
       role="row"
-      className="grid items-center gap-3 border-t border-line px-[22px] py-2"
-      style={{ gridTemplateColumns: COLUMNS }}
+      className={`flex flex-col gap-3 border-t border-line px-4 py-4 xl:grid xl:items-center xl:gap-3 xl:px-[22px] xl:py-2.5 ${COLUMNS}`}
     >
-      <span role="cell" className="truncate text-[15px] font-extrabold">
-        {session.name}
-      </span>
-      <span role="cell" className="font-mono font-bold tracking-[0.06em]">
-        {session.code}
-      </span>
-      <PinCell key={pinVersion} session={session} />
-      <span role="cell">
-        <span
-          className={`inline-flex h-[26px] items-center rounded-full px-2.5 text-xs font-extrabold ${
-            active ? "bg-live/15 text-live" : "bg-fg/10 text-muted"
-          }`}
-        >
-          {active ? "Aktif" : "Selesai"}
+      <span role="cell" className="flex min-w-0 flex-col gap-0.5">
+        <span className="flex items-center justify-between gap-3">
+          <span className="truncate text-[15px] font-extrabold">{session.name}</span>
+          <StatusChip active={active} className="xl:hidden" />
+        </span>
+        <span className="truncate font-mono text-[13px] font-bold text-muted">/s/{ref}</span>
+        <span className="text-xs text-muted" suppressHydrationWarning>
+          Dibuat {formatDateTime(session.createdAt)}
         </span>
       </span>
-      <span role="cell">{session.moderationMode === "approve" ? "Approve" : "Langsung"}</span>
-      <span role="cell" className="text-right font-bold tabular-nums">
-        {session.entryCount}
+      <MetaItem label="Kode">
+        <span role="cell" className="font-mono font-bold tracking-[0.06em]">
+          {session.code}
+        </span>
+      </MetaItem>
+      <MetaItem label="PIN admin">
+        <PinCell key={pinVersion} session={session} />
+      </MetaItem>
+      <span role="cell" className="hidden xl:block">
+        <StatusChip active={active} />
       </span>
-      <span role="cell" className="text-muted" suppressHydrationWarning>
-        {formatDateTime(session.createdAt)}
-      </span>
-      <span role="cell" className="flex items-center justify-end gap-1.5">
+      <MetaItem label="Moderasi">
+        <span role="cell">{session.moderationMode === "approve" ? "Approve" : "Langsung"}</span>
+      </MetaItem>
+      <MetaItem label="Kata">
+        <span role="cell" className="font-bold tabular-nums xl:text-right">
+          {session.entryCount}
+        </span>
+      </MetaItem>
+      <span role="cell" className="flex items-center gap-1.5 xl:justify-end">
         <Link
-          href={`/s/${session.code}/admin`}
+          href={`/s/${ref}/admin`}
           className="flex h-10 items-center whitespace-nowrap rounded-[10px] bg-primary px-3 text-[13px] font-extrabold text-on-primary"
         >
           Buka admin
         </Link>
-        <button
-          type="button"
-          disabled={resetting}
-          onClick={() => onResetPin(session)}
-          className="h-10 whitespace-nowrap rounded-[10px] border border-line bg-transparent px-3 text-[13px] font-bold text-fg disabled:opacity-60"
+        <a
+          href={`/s/${ref}/display`}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-line px-3 text-[13px] font-bold text-fg"
         >
-          Reset PIN
-        </button>
-        <details className="relative">
-          <summary
-            aria-label={`Unduh data sesi ${session.name}`}
-            className="flex h-10 w-10 cursor-pointer list-none items-center justify-center rounded-[10px] border border-line text-fg [&::-webkit-details-marker]:hidden"
-          >
-            {pngBusy ? <SpinnerIcon size={18} /> : <DownloadIcon size={18} strokeWidth={2.2} />}
-          </summary>
-          <div className="absolute right-0 top-11 z-10 flex min-w-[130px] flex-col gap-0.5 rounded-xl border border-line bg-surface p-1.5 shadow-lg">
-            <a href={`/api/sessions/${session.code}/export?format=csv`} download className={menuLink}>
-              CSV
-            </a>
-            <a href={`/api/sessions/${session.code}/export?format=json`} download className={menuLink}>
-              JSON
-            </a>
-            <button type="button" onClick={png} className={`${menuLink} border-0 bg-transparent text-left`}>
-              PNG akhir
-            </button>
-          </div>
-        </details>
+          Photowall
+          <ExternalLinkIcon size={14} strokeWidth={2.2} />
+        </a>
+        <ActionMenu label={`Aksi lain untuk sesi ${session.name}`}>
+          {(close) => (
+            <>
+              <button
+                type="button"
+                role="menuitem"
+                className={menuItemClass}
+                onClick={() => {
+                  close();
+                  void copyInputLink();
+                }}
+              >
+                <LinkIcon size={16} />
+                Salin tautan input
+              </button>
+              <a
+                role="menuitem"
+                href={`/api/sessions/${session.code}/export?format=csv`}
+                download
+                className={menuItemClass}
+                onClick={close}
+              >
+                <DownloadIcon size={16} />
+                Unduh CSV
+              </a>
+              <a
+                role="menuitem"
+                href={`/api/sessions/${session.code}/export?format=json`}
+                download
+                className={menuItemClass}
+                onClick={close}
+              >
+                <DownloadIcon size={16} />
+                Unduh JSON
+              </a>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={pngBusy}
+                className={menuItemClass}
+                onClick={() => {
+                  close();
+                  void png();
+                }}
+              >
+                {pngBusy ? <SpinnerIcon size={16} /> : <DownloadIcon size={16} />}
+                PNG akhir
+              </button>
+              <button
+                type="button"
+                role="menuitem"
+                disabled={resetting}
+                className={`${menuItemClass} text-danger`}
+                onClick={() => {
+                  close();
+                  onResetPin(session);
+                }}
+              >
+                <RefreshIcon size={16} />
+                Reset PIN admin
+              </button>
+            </>
+          )}
+        </ActionMenu>
       </span>
     </div>
   );
 }
 
 export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessions: SessionOverview[] }) {
+  const toast = useToast();
   const [filter, setFilter] = useState<Filter>("semua");
+  const [query, setQuery] = useState("");
   const [hours, setHours] = useState<Bucket[] | null>(null);
   const [reset, setReset] = useState<{ code: string; pin: string } | null>(null);
+  const [resetTarget, setResetTarget] = useState<SessionOverview | null>(null);
   const [resettingId, setResettingId] = useState<string | null>(null);
   const [pinVersions, setPinVersions] = useState<Record<string, number>>({});
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const dayStart = new Date();
@@ -242,26 +342,30 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
     setHours(fillBuckets(stats.hours, HOUR_MS, currentHour, HOUR_WINDOW).filter((bucket) => bucket.start >= dayStart.getTime()));
   }, [stats.hours]);
 
-  const visible = useMemo(
-    () =>
-      sessions.filter((session) =>
-        filter === "aktif" ? session.status === "active" : filter === "selesai" ? session.status === "ended" : true,
-      ),
-    [sessions, filter],
-  );
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase();
+    return sessions.filter((session) => {
+      const matchesFilter =
+        filter === "aktif" ? session.status === "active" : filter === "selesai" ? session.status === "ended" : true;
+      if (!matchesFilter) return false;
+      if (!needle) return true;
+      return [session.name, session.code, session.slug ?? ""].some((value) => value.toLowerCase().includes(needle));
+    });
+  }, [sessions, filter, query]);
 
   const resetPin = async (session: SessionOverview) => {
     setResettingId(session.id);
-    setError(null);
     try {
       const response = await fetch(`/api/admin/sessions/${session.id}/reset-pin`, { method: "POST" });
       if (!response.ok) throw new Error("reset");
       setReset((await response.json()) as { code: string; pin: string });
       setPinVersions((current) => ({ ...current, [session.id]: (current[session.id] ?? 0) + 1 }));
+      toast.success(`PIN sesi ${session.name} direset.`);
     } catch {
-      setError("PIN gagal direset. Coba lagi.");
+      toast.error("PIN gagal direset. Coba lagi.");
     } finally {
       setResettingId(null);
+      setResetTarget(null);
     }
   };
 
@@ -314,11 +418,6 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
           </button>
         </div>
       ) : null}
-      {error ? (
-        <div role="alert" className="rounded-[14px] bg-surface2 px-[18px] py-3.5 text-sm font-bold text-danger">
-          {error}
-        </div>
-      ) : null}
 
       <section aria-label="Ringkasan" className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-3.5">
         <Tile label="Sesi aktif" value={stats.activeSessions} />
@@ -345,61 +444,91 @@ export function GlobalDashboard({ stats, sessions }: { stats: GlobalStats; sessi
         </section>
       </div>
 
-      <section className="overflow-hidden rounded-[18px] border border-line bg-surface">
-        <div className="flex flex-wrap items-center justify-between gap-3 px-[22px] py-[18px]">
+      <section className="rounded-[18px] border border-line bg-surface">
+        <div className="flex flex-wrap items-center justify-between gap-3 px-4 py-[18px] md:px-[22px]">
           <h2 className="m-0 text-lg font-extrabold">Sesi</h2>
-          <div role="group" aria-label="Filter sesi" className="flex gap-1.5">
-            {filters.map((item) => {
-              const active = item.id === filter;
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  aria-pressed={active}
-                  onClick={() => setFilter(item.id)}
-                  className={`h-9 rounded-full border px-3 text-[13px] font-bold ${
-                    active ? "border-primary bg-primary text-on-primary" : "border-line bg-transparent text-fg"
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
+          <div className="flex flex-wrap items-center gap-2.5">
+            <label className="flex h-10 min-w-[250px] items-center gap-2 rounded-full border border-line bg-field px-3.5 focus-within:border-ring">
+              <SearchIcon size={16} className="shrink-0 text-muted" />
+              <span className="sr-only">Cari sesi</span>
+              <input
+                type="search"
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="Cari nama, kode"
+                autoComplete="off"
+                className="min-w-0 flex-1 border-0 bg-transparent text-sm text-fg focus:outline-none"
+              />
+            </label>
+            <div role="group" aria-label="Filter sesi" className="flex gap-1.5">
+              {filters.map((item) => {
+                const activeFilter = item.id === filter;
+                return (
+                  <button
+                    key={item.id}
+                    type="button"
+                    aria-pressed={activeFilter}
+                    onClick={() => setFilter(item.id)}
+                    className={`h-9 rounded-full border px-3 text-[13px] font-bold ${
+                      activeFilter ? "border-primary bg-primary text-on-primary" : "border-line bg-transparent text-fg"
+                    }`}
+                  >
+                    {item.label}
+                  </button>
+                );
+              })}
+            </div>
           </div>
         </div>
-        <div className="overflow-x-auto">
-          <div role="table" aria-label="Daftar sesi" className="min-w-[1110px] text-sm">
-            <div
-              role="row"
-              className="grid items-center gap-3 border-t border-line px-[22px] py-2.5 text-[13px] font-bold text-muted"
-              style={{ gridTemplateColumns: COLUMNS }}
-            >
-              <span role="columnheader">Nama</span>
-              <span role="columnheader">Kode</span>
-              <span role="columnheader">PIN admin</span>
-              <span role="columnheader">Status</span>
-              <span role="columnheader">Moderasi</span>
-              <span role="columnheader" className="text-right">
-                Kata
-              </span>
-              <span role="columnheader">Dibuat</span>
-              <span role="columnheader" className="text-right">
-                Aksi
-              </span>
-            </div>
-            {visible.length === 0 ? <div className="border-t border-line px-[22px] py-5 text-muted">Belum ada sesi.</div> : null}
-            {visible.map((session) => (
-              <SessionRow
-                key={session.id}
-                session={session}
-                pinVersion={pinVersions[session.id] ?? 0}
-                onResetPin={resetPin}
-                resetting={resettingId === session.id}
-              />
-            ))}
+        <div role="table" aria-label="Daftar sesi" className="text-sm">
+          <div
+            role="row"
+            className={`hidden items-center gap-3 border-t border-line px-[22px] py-2.5 text-[13px] font-bold text-muted xl:grid ${COLUMNS}`}
+          >
+            <span role="columnheader">Sesi</span>
+            <span role="columnheader">Kode</span>
+            <span role="columnheader">PIN admin</span>
+            <span role="columnheader">Status</span>
+            <span role="columnheader">Moderasi</span>
+            <span role="columnheader" className="text-right">
+              Kata
+            </span>
+            <span role="columnheader" className="text-right">
+              Aksi
+            </span>
           </div>
+          {visible.length === 0 ? (
+            <div className="border-t border-line px-[22px] py-5 text-muted">
+              {sessions.length === 0 ? "Belum ada sesi." : "Tidak ada sesi yang cocok dengan pencarian atau filter."}
+            </div>
+          ) : null}
+          {visible.map((session) => (
+            <SessionRow
+              key={session.id}
+              session={session}
+              pinVersion={pinVersions[session.id] ?? 0}
+              onResetPin={setResetTarget}
+              resetting={resettingId === session.id}
+            />
+          ))}
         </div>
       </section>
+
+      <ConfirmDialog
+        open={resetTarget !== null}
+        title="Reset PIN admin sesi?"
+        description={
+          <>
+            PIN lama sesi <b className="text-fg">{resetTarget?.name}</b> tidak berlaku lagi dan semua admin sesi yang sedang masuk
+            otomatis keluar. PIN baru akan ditampilkan di atas tabel.
+          </>
+        }
+        confirmLabel="Ya, reset PIN"
+        tone="danger"
+        busy={resettingId !== null}
+        onConfirm={() => resetTarget && void resetPin(resetTarget)}
+        onCancel={() => setResetTarget(null)}
+      />
     </main>
   );
 }

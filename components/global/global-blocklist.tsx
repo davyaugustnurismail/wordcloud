@@ -2,7 +2,9 @@
 
 import { useEffect, useState, type FormEvent } from "react";
 import { checkWord, normalizeWord } from "@/lib/words";
+import { BlocklistImport } from "../blocklist-import";
 import { AlertCircleIcon, PlusIcon, XIcon } from "../icons";
+import { useToast } from "../ui/toast";
 
 type SessionOption = { id: string; name: string; code: string };
 
@@ -51,6 +53,7 @@ function Chip({
 }
 
 export function GlobalBlocklist({ sessions, globalTerms }: Props) {
+  const toast = useToast();
   const [scope, setScope] = useState("global");
   const [globalList, setGlobalList] = useState(globalTerms);
   const [sessionList, setSessionList] = useState<string[]>([]);
@@ -93,6 +96,7 @@ export function GlobalBlocklist({ sessions, globalTerms }: Props) {
       const result = (await response.json()) as { terms: string[] };
       if (target === "global") setGlobalList(result.terms);
       else setSessionList(result.terms);
+      toast.success(method === "POST" ? `"${term}" ditambahkan ke blocklist.` : `"${term}" dihapus dari blocklist.`);
       return true;
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
@@ -119,8 +123,8 @@ export function GlobalBlocklist({ sessions, globalTerms }: Props) {
         <div className="flex flex-col gap-1">
           <h1 className="m-0 text-2xl font-extrabold tracking-[-0.01em]">Blocklist kata</h1>
           <p className="m-0 text-sm leading-normal text-muted">
-            Tidak ada filter bawaan. Hanya kata di daftar ini yang ditolak, dicocokkan setelah huruf kecil. Audiens hanya
-            melihat pesan netral &quot;Coba kata lain ya&quot;.
+            Tidak ada filter bawaan. Hanya kata di daftar ini yang ditolak, dicocokkan setelah huruf kecil. Audiens yang
+            mengetik kata terlarang melihat jendela peringatan.
           </p>
         </div>
         <form onSubmit={add} className="m-0 flex flex-wrap gap-2.5">
@@ -172,6 +176,13 @@ export function GlobalBlocklist({ sessions, globalTerms }: Props) {
             {error}
           </span>
         ) : null}
+        <BlocklistImport
+          endpoint="/api/admin/blocklist/import"
+          scope={scope}
+          target={selected ? `Khusus ${selected.name}` : "Blocklist global (semua sesi)"}
+          disabled={busy}
+          onImported={(terms) => (scope === "global" ? setGlobalList(terms) : setSessionList(terms))}
+        />
 
         <div className="flex flex-col gap-2.5">
           <span className="text-[13px] font-bold uppercase tracking-[0.06em] text-muted">

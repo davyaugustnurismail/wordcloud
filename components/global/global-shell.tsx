@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
-import { BanIcon, BarsIcon, ImageIcon, LockIcon, ShieldIcon, SlidersIcon } from "../icons";
+import { BrandLogo } from "../brand-logo";
+import { BanIcon, BarsIcon, ImageIcon, LockIcon, ShieldIcon, SlidersIcon, UsersIcon } from "../icons";
 import { ThemeToggle } from "../theme-toggle";
 
 type NavItem = { href: string; hash?: string; label: string; icon: ReactNode };
@@ -11,6 +12,7 @@ type NavItem = { href: string; hash?: string; label: string; icon: ReactNode };
 const navItems: NavItem[] = [
   { href: "/admin", label: "Dashboard & sesi", icon: <BarsIcon size={18} /> },
   { href: "/admin/blocklist", label: "Blocklist kata", icon: <BanIcon size={18} /> },
+  { href: "/admin/users", label: "User", icon: <UsersIcon size={18} /> },
   { href: "/admin/settings", hash: "#default", label: "Default sesi baru", icon: <SlidersIcon size={18} /> },
   { href: "/admin/settings", hash: "#gambar", label: "Pustaka gambar", icon: <ImageIcon size={18} /> },
   { href: "/admin/settings", hash: "#password", label: "Password pembuat", icon: <LockIcon size={18} /> },
@@ -28,7 +30,7 @@ function useHash(): string {
   return hash;
 }
 
-export function GlobalShell({ children }: { children: ReactNode }) {
+export function GlobalShell({ children, account }: { children: ReactNode; account: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
   const hash = useHash();
@@ -51,11 +53,17 @@ export function GlobalShell({ children }: { children: ReactNode }) {
   return (
     <div className="flex min-h-view flex-col bg-bg text-fg">
       <header className="flex flex-wrap items-center justify-between gap-4 border-b border-line px-4 py-3.5 md:px-8">
-        <span className="flex h-7 items-center gap-1.5 rounded-full bg-surface2 px-2.5 text-xs font-extrabold tracking-[0.06em]">
-          <ShieldIcon size={14} strokeWidth={2.2} />
-          ADMIN GLOBAL
-        </span>
+        <div className="flex items-center gap-3">
+          <BrandLogo height={36} />
+          <span className="flex h-7 items-center gap-1.5 rounded-full bg-surface2 px-2.5 text-xs font-extrabold tracking-[0.06em]">
+            <ShieldIcon size={14} strokeWidth={2.2} />
+            ADMIN GLOBAL
+          </span>
+        </div>
         <div className="flex items-center gap-2.5">
+          <span className="hidden max-w-[220px] truncate text-sm font-semibold text-muted sm:inline" title={account ?? undefined}>
+            {account ?? "Masuk dengan password"}
+          </span>
           <ThemeToggle iconOnly />
           <button
             type="button"

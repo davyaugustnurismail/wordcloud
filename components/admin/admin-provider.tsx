@@ -38,6 +38,7 @@ export type AdminActions = {
 
 type AdminContextValue = {
   code: string;
+  ref: string;
   name: string;
   connected: boolean;
   ready: boolean;
@@ -75,13 +76,14 @@ export function useAdmin(): AdminContextValue {
 
 type Props = {
   code: string;
+  sessionRef: string;
   name: string;
   initialSettings: SessionSettings;
   initialState: SessionState;
   children: ReactNode;
 };
 
-export function AdminProvider({ code, name, initialSettings, initialState, children }: Props) {
+export function AdminProvider({ code, sessionRef, name, initialSettings, initialState, children }: Props) {
   const router = useRouter();
   const [connected, setConnected] = useState(false);
   const [ready, setReady] = useState(false);
@@ -194,6 +196,7 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
   const value = useMemo<AdminContextValue>(
     () => ({
       code,
+      ref: sessionRef,
       name,
       connected,
       ready,
@@ -210,6 +213,7 @@ export function AdminProvider({ code, name, initialSettings, initialState, child
     }),
     [
       code,
+      sessionRef,
       name,
       connected,
       ready,

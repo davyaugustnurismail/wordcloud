@@ -14,6 +14,8 @@ const schema = z.object({
   AUTH_SECRET: z.string().min(32, "AUTH_SECRET minimal 32 karakter"),
   ADMIN_PASSWORD_HASH: z.string().min(1).transform(decodeHash),
   CREATOR_PASSWORD_HASH: z.string().min(1).transform(decodeHash),
+  GOOGLE_CLIENT_ID: z.string().trim().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().trim().optional(),
   PUBLIC_URL: z.url().default("http://localhost:3000"),
   UPLOAD_DIR: z.string().min(1).default("./data/uploads"),
   ALLOW_LAN_ORIGINS: z.enum(["true", "false"]).optional(),
@@ -45,4 +47,16 @@ export function getEnv(): Env {
     TRUST_PROXY: TRUST_PROXY === "true",
   };
   return cached;
+}
+
+export type GoogleConfig = { clientId: string; clientSecret: string; redirectUri: string };
+
+export function getGoogleConfig(): GoogleConfig | null {
+  const env = getEnv();
+  if (!env.GOOGLE_CLIENT_ID || !env.GOOGLE_CLIENT_SECRET) return null;
+  return {
+    clientId: env.GOOGLE_CLIENT_ID,
+    clientSecret: env.GOOGLE_CLIENT_SECRET,
+    redirectUri: `${new URL(env.PUBLIC_URL).origin}/api/auth/google/callback`,
+  };
 }

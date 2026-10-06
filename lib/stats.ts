@@ -27,6 +27,7 @@ export type GlobalStats = {
 export type SessionOverview = {
   id: string;
   code: string;
+  slug: string | null;
   name: string;
   status: "active" | "ended";
   moderationMode: "langsung" | "approve";
@@ -126,6 +127,7 @@ export async function listSessionOverviews(): Promise<SessionOverview[]> {
       .select({
         id: sessions.id,
         code: sessions.code,
+        slug: sessions.slug,
         name: sessions.name,
         status: sessions.status,
         settings: sessions.settings,
@@ -143,6 +145,7 @@ export async function listSessionOverviews(): Promise<SessionOverview[]> {
   return rows.map((row) => ({
     id: row.id,
     code: row.code,
+    slug: row.slug,
     name: row.name,
     status: row.status,
     moderationMode: parseSettings(row.settings).moderationMode,

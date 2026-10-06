@@ -6,20 +6,23 @@ export const GLOBAL_COOKIE_NAME = "wc_global";
 
 export const globalCookieOptions = authCookieOptions;
 
-export async function sealGlobalToken(): Promise<string> {
-  return new SignJWT({ scope: "global-admin" })
+export type GlobalTokenClaims = { userId: string | null };
+
+export async function sealGlobalToken(userId?: string): Promise<string> {
+  return new SignJWT({ scope: "global-admin", ...(userId ? { uid: userId } : {}) })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime(`${AUTH_COOKIE_MAX_AGE_SEC}s`)
     .sign(secretKey());
 }
 
-export async function verifyGlobalToken(token: string | undefined): Promise<boolean> {
-  if (!token) return false;
+export async function readGlobalToken(token: string | undefined): Promise<GlobalTokenClaims | null> {
+  if (!token) return null;
   try {
     const { payload } = await jwtVerify(token, secretKey(), { algorithms: ["HS256"] });
-    return payload.scope === "global-admin";
+    if (payload.scope !== "global-admin") return null;
+    return { userId: typeof payload.uid === "string" ? payload.uid : null };
   } catch {
-    return false;
+    return null;
   }
 }

@@ -189,50 +189,54 @@ export function ThemeSettings({ code, library, own }: Props) {
             </span>
           </div>
 
-          <div className="flex flex-wrap gap-5">
-            <div className="min-w-0 flex-[1_1_280px]">
-              <ColorField
-                id="warna-photowall"
-                label="Warna latar photowall (tema Warna)"
-                value={settings.photowallColor}
-                fallback={settings.photowallColor}
-                onChange={(hex) => patchSettings({ photowallColor: hex })}
-              />
+          {settings.photowallTheme === "warna" ? (
+            <div className="flex flex-wrap gap-5">
+              <div className="min-w-0 flex-[1_1_280px]">
+                <ColorField
+                  id="warna-photowall"
+                  label="Warna latar photowall"
+                  value={settings.photowallColor}
+                  fallback={settings.photowallColor}
+                  onChange={(hex) => patchSettings({ photowallColor: hex })}
+                />
+              </div>
             </div>
-          </div>
+          ) : null}
 
-          <div className="flex flex-wrap gap-5">
-            <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
-              <span className="text-sm font-bold">Gambar latar photowall (tema Foto)</span>
-              <BackgroundPicker
-                ids={photowallIds}
-                selectedId={settings.photowallBgId}
-                size="md"
-                ariaSubject="photowall"
-                uploadLabel="Upload foto latar photowall"
-                uploading={uploading === "photowall_bg"}
-                error={photowallBgError}
-                onSelectId={(id) => {
-                  setPhotowallBgError(null);
-                  patchSettings({ photowallBgId: id }, true);
-                }}
-                onPickFile={(file) => upload("photowall_bg", file)}
-              />
-              <span className="text-xs text-muted">Dikompres ke lebar maksimal 1920 px.</span>
+          {settings.photowallTheme === "foto" ? (
+            <div className="flex flex-wrap gap-5">
+              <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
+                <span className="text-sm font-bold">Gambar latar photowall</span>
+                <BackgroundPicker
+                  ids={photowallIds}
+                  selectedId={settings.photowallBgId}
+                  size="md"
+                  ariaSubject="photowall"
+                  uploadLabel="Upload foto latar photowall"
+                  uploading={uploading === "photowall_bg"}
+                  error={photowallBgError}
+                  onSelectId={(id) => {
+                    setPhotowallBgError(null);
+                    patchSettings({ photowallBgId: id }, true);
+                  }}
+                  onPickFile={(file) => upload("photowall_bg", file)}
+                />
+                <span className="text-xs text-muted">Dikompres ke lebar maksimal 1920 px.</span>
+              </div>
+              <div className="min-w-0 flex-[1_1_220px]">
+                <RangeField
+                  id="overlay"
+                  label="Overlay gelap"
+                  display={`${settings.photowallOverlay}%`}
+                  min={0}
+                  max={85}
+                  step={5}
+                  value={settings.photowallOverlay}
+                  onChange={(value) => patchSettings({ photowallOverlay: value })}
+                />
+              </div>
             </div>
-            <div className="min-w-0 flex-[1_1_220px]">
-              <RangeField
-                id="overlay"
-                label="Overlay gelap"
-                display={`${settings.photowallOverlay}%`}
-                min={0}
-                max={85}
-                step={5}
-                value={settings.photowallOverlay}
-                onChange={(value) => patchSettings({ photowallOverlay: value })}
-              />
-            </div>
-          </div>
+          ) : null}
 
           <div className="flex flex-wrap gap-5">
             <div className="min-w-0 flex-[1_1_320px]">
@@ -387,47 +391,51 @@ export function ThemeSettings({ code, library, own }: Props) {
             </div>
           </div>
 
-          <div className="min-w-0 sm:max-w-[360px]">
-            <ColorField
-              id="warna-input"
-              label="Warna latar input (tema Warna)"
-              value={settings.inputColor}
-              fallback={settings.inputColor}
-              onChange={(hex) => patchSettings({ inputColor: hex })}
-            />
-          </div>
+          {settings.inputTheme === "warna" ? (
+            <div className="min-w-0 sm:max-w-[360px]">
+              <ColorField
+                id="warna-input"
+                label="Warna latar input"
+                value={settings.inputColor}
+                fallback={settings.inputColor}
+                onChange={(hex) => patchSettings({ inputColor: hex })}
+              />
+            </div>
+          ) : null}
 
-          <div className="flex flex-wrap gap-5">
-            <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
-              <span className="text-sm font-bold">Gambar latar input (tema Foto)</span>
-              <BackgroundPicker
-                ids={inputIds}
-                selectedId={settings.inputBgId}
-                size="md"
-                ariaSubject="input"
-                uploadLabel="Upload foto latar input"
-                uploading={uploading === "input_bg"}
-                error={inputBgError}
-                onSelectId={(id) => {
-                  setInputBgError(null);
-                  patchSettings({ inputBgId: id }, true);
-                }}
-                onPickFile={(file) => upload("input_bg", file)}
-              />
+          {settings.inputTheme === "foto" ? (
+            <div className="flex flex-wrap gap-5">
+              <div className="flex min-w-0 flex-[1_1_280px] flex-col gap-2.5">
+                <span className="text-sm font-bold">Gambar latar input</span>
+                <BackgroundPicker
+                  ids={inputIds}
+                  selectedId={settings.inputBgId}
+                  size="md"
+                  ariaSubject="input"
+                  uploadLabel="Upload foto latar input"
+                  uploading={uploading === "input_bg"}
+                  error={inputBgError}
+                  onSelectId={(id) => {
+                    setInputBgError(null);
+                    patchSettings({ inputBgId: id }, true);
+                  }}
+                  onPickFile={(file) => upload("input_bg", file)}
+                />
+              </div>
+              <div className="min-w-0 flex-[1_1_220px]">
+                <RangeField
+                  id="overlay-input"
+                  label="Overlay gelap input"
+                  display={`${settings.inputOverlay}%`}
+                  min={0}
+                  max={85}
+                  step={5}
+                  value={settings.inputOverlay}
+                  onChange={(value) => patchSettings({ inputOverlay: value })}
+                />
+              </div>
             </div>
-            <div className="min-w-0 flex-[1_1_220px]">
-              <RangeField
-                id="overlay-input"
-                label="Overlay gelap input"
-                display={`${settings.inputOverlay}%`}
-                min={0}
-                max={85}
-                step={5}
-                value={settings.inputOverlay}
-                onChange={(value) => patchSettings({ inputOverlay: value })}
-              />
-            </div>
-          </div>
+          ) : null}
 
           <BoxStyleField
             value={settings.inputBoxStyle}

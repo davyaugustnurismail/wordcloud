@@ -1,10 +1,12 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type CSSProperties, type FormEvent } from "react";
 import { resolveInputTheme } from "@/lib/input-themes";
 import { connectRealtime, getDeviceId, type RealtimeClient } from "@/lib/realtime/client";
 import { assetUrl, type SessionSettings } from "@/lib/settings";
 import { checkWord, countChars, hasInnerSpace, stripWord } from "@/lib/words";
+import { ForbiddenWordDialog } from "./forbidden-word-dialog";
 import { AlertCircleIcon, CheckIcon, SpinnerIcon, WifiOffIcon } from "./icons";
 import { useSanitizedField } from "./use-sanitized-field";
 
@@ -13,7 +15,7 @@ type Props = {
   initialSettings: SessionSettings;
 };
 
-type InputError = "space" | "blocked" | "rate_limited" | "paused" | "ended" | "error";
+type InputError = "space" | "rate_limited" | "paused" | "ended" | "error";
 type SentKind = "shown" | "pending";
 
 const SENT_VISIBLE_MS = 1800;
@@ -21,7 +23,6 @@ const ACK_TIMEOUT_MS = 5000;
 
 const errorMessages: Record<InputError, string> = {
   space: "Cukup satu kata ya",
-  blocked: "Coba kata lain ya",
   rate_limited: "Pelan-pelan ya, coba lagi sebentar",
   paused: "Input sedang dijeda, tunggu sebentar.",
   ended: "Sesi sudah berakhir. Terima kasih sudah ikut!",
@@ -34,6 +35,7 @@ const sentMessages: Record<SentKind, string> = {
 };
 
 export function InputKiosk({ code, initialSettings }: Props) {
+  const router = useRouter();
   const [settings, setSettings] = useState(initialSettings);
   const [connected, setConnected] = useState(false);
   const [error, setError] = useState<InputError | null>(null);
@@ -41,6 +43,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
   const [paused, setPaused] = useState(false);
   const [ended, setEnded] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [forbidden, setForbidden] = useState<string | null>(null);
   const socketRef = useRef<RealtimeClient | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const sentTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
@@ -51,7 +54,10 @@ export function InputKiosk({ code, initialSettings }: Props) {
 
     socket.on("connect", () => setConnected(true));
     socket.on("disconnect", () => setConnected(false));
-    socket.on("connect_error", () => setConnected(false));
+    socket.on("connect_error", (connectError) => {
+      setConnected(false);
+      if (connectError.message === "unauthorized") router.refresh();
+    });
     socket.on("snapshot", (snapshot) => {
       setSettings(snapshot.settings);
       setPaused(snapshot.state.paused);
@@ -68,7 +74,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
       socket.disconnect();
       socketRef.current = null;
     };
-  }, [code]);
+  }, [code, router]);
 
   const theme = resolveInputTheme(settings);
   const field = useSanitizedField({
@@ -110,6 +116,11 @@ export function InputKiosk({ code, initialSettings }: Props) {
         inputRef.current?.focus();
         return;
       }
+      if (ack.reason === "blocked") {
+        setError(null);
+        setForbidden(checked.text);
+        return;
+      }
       if (ack.reason === "invalid") {
         setError("error");
       } else {
@@ -127,6 +138,13 @@ export function InputKiosk({ code, initialSettings }: Props) {
       ? errorMessages[activeError]
       : "Cukup satu kata, tanpa spasi.";
   const blurOn = settings.cardBlur;
+
+  const closeForbidden = () => {
+    setForbidden(null);
+    field.setValue("");
+    setError(null);
+    setTimeout(() => inputRef.current?.focus(), 0);
+  };
 
   const fieldStyle = {
     background: theme.field.background,
@@ -273,6 +291,7 @@ export function InputKiosk({ code, initialSettings }: Props) {
           </div>
         </div>
       </div>
+      <ForbiddenWordDialog word={forbidden} theme={theme} onClose={closeForbidden} />
     </div>
   );
 }

@@ -104,3 +104,16 @@ body {
   color: var(--fg);
   font-family: var(--font-sans);
 }
+
+@layer components {
+  .brand-plate {
+    display: inline-flex;
+    align-items: center;
+    border-radius: 12px;
+  }
+
+  :root[data-theme="dark"] .brand-plate {
+    background: #ffffff;
+    padding: 2px 8px;
+  }
+}
