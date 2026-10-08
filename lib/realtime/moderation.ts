@@ -3,7 +3,7 @@ import { isTermBlocked } from "../blocklist";
 import { approveEntries, editEntry, hideEntry, rejectEntry, restoreEntry } from "../entries";
 import { applyControl, findSessionById, setModerationMode, updateSessionSettings } from "../sessions";
 import { sessionSettingsSchema, settingsPatchSchema } from "../settings";
-import { checkWord, normalizeWord } from "../words";
+import { blockKeys, checkWord, normalizeWord } from "../words";
 import {
   approvePayloadSchema,
   controlPayloadSchema,
@@ -102,7 +102,7 @@ export function registerAdminHandlers(io: RealtimeServer, socket: RealtimeSocket
       const checked = checkWord(parsed.data.text, session.settings.maxChars);
       if (!checked.ok) return invalid;
       const normalized = normalizeWord(checked.text);
-      if (await isTermBlocked(sessionId, normalized)) return { ok: false, reason: "blocked" };
+      if (await isTermBlocked(sessionId, normalized, blockKeys(parsed.data.text, checked.text))) return { ok: false, reason: "blocked" };
       const row = await editEntry(sessionId, parsed.data.id, checked.text, normalized, ACTOR);
       if (!row) return notFound;
       if (row.status === "visible") publishUpdated(io, sessionId, row);

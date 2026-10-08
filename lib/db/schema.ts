@@ -64,10 +64,14 @@ export const blockedTerms = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     term: text("term").notNull(),
+    skeleton: text("skeleton").notNull().default(""),
     sessionId: uuid("session_id").references(() => sessions.id, { onDelete: "cascade" }),
     createdAt: createdAt(),
   },
-  (t) => [unique("blocked_terms_term_session_uq").on(t.term, t.sessionId).nullsNotDistinct()],
+  (t) => [
+    unique("blocked_terms_term_session_uq").on(t.term, t.sessionId).nullsNotDistinct(),
+    index("blocked_terms_skeleton_idx").on(t.skeleton),
+  ],
 );
 
 export const assets = pgTable("assets", {

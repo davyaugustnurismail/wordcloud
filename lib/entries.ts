@@ -90,16 +90,21 @@ export async function insertEntryUnlessBlocked(input: {
   sessionId: string;
   text: string;
   normalized: string;
+  blockKeys: string[];
   deviceId: string | null;
   status: "visible" | "pending";
 }): Promise<EntryRow | null> {
   const shownAt = input.status === "visible" ? new Date() : null;
+  const keys = input.blockKeys.filter(Boolean);
+  const skeletonMatch =
+    keys.length === 0 ? sql`` : sql` or b.skeleton in (${sql.join(keys.map((key) => sql`${key}::text`), sql`, `)})`;
   const result = await getDb().execute<InsertedEntryRow>(sql`
     insert into entries (session_id, text, normalized, status, shown_at, device_id)
     select ${input.sessionId}::uuid, ${input.text}::text, ${input.normalized}::text, ${input.status}::entry_status, ${shownAt}::timestamptz, ${input.deviceId}::text
     where not exists (
       select 1 from blocked_terms b
-      where b.term = ${input.normalized}::text and (b.session_id is null or b.session_id = ${input.sessionId}::uuid)
+      where (b.term = ${input.normalized}::text${skeletonMatch})
+        and (b.session_id is null or b.session_id = ${input.sessionId}::uuid)
     )
     returning id, session_id, text, normalized, status,
       (extract(epoch from created_at) * 1000)::float8 as created_ms,

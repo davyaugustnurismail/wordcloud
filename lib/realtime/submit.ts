@@ -2,7 +2,7 @@ import { insertEntryUnlessBlocked } from "../entries";
 import { measure } from "../metrics";
 import { hitRateLimit } from "../rate-limit";
 import { findSessionById } from "../sessions";
-import { checkWord, normalizeWord } from "../words";
+import { blockKeys, checkWord, normalizeWord } from "../words";
 import { submitPayloadSchema, type SubmitAck } from "./events";
 import { publishAdminEntry, publishShown } from "./publish";
 import type { RealtimeServer, RealtimeSocket } from "./types";
@@ -36,6 +36,7 @@ export async function handleSubmit(io: RealtimeServer, socket: RealtimeSocket, p
       sessionId: session.id,
       text: checked.text,
       normalized,
+      blockKeys: blockKeys(parsed.data.text, checked.text),
       deviceId: socket.data.deviceId,
       status: approve ? "pending" : "visible",
     }),

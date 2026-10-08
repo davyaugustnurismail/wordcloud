@@ -1,13 +1,18 @@
-import { and, asc, eq, isNull, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { blockedTerms } from "./db/schema";
+import { skeletonWord } from "./words";
 
-export async function isTermBlocked(sessionId: string, normalized: string): Promise<boolean> {
+export async function isTermBlocked(sessionId: string, normalized: string, keys: string[] = []): Promise<boolean> {
+  const skeletons = [...new Set([skeletonWord(normalized), ...keys])].filter(Boolean);
   const [row] = await getDb()
     .select({ id: blockedTerms.id })
     .from(blockedTerms)
     .where(
-      and(eq(blockedTerms.term, normalized), or(isNull(blockedTerms.sessionId), eq(blockedTerms.sessionId, sessionId))),
+      and(
+        or(eq(blockedTerms.term, normalized), inArray(blockedTerms.skeleton, skeletons)),
+        or(isNull(blockedTerms.sessionId), eq(blockedTerms.sessionId, sessionId)),
+      ),
     )
     .limit(1);
   return Boolean(row);
@@ -34,7 +39,7 @@ export async function listGlobalTerms(): Promise<string[]> {
 export async function addSessionTerm(sessionId: string, term: string): Promise<boolean> {
   const rows = await getDb()
     .insert(blockedTerms)
-    .values({ term, sessionId })
+    .values({ term, skeleton: skeletonWord(term), sessionId })
     .onConflictDoNothing()
     .returning({ id: blockedTerms.id });
   return rows.length > 0;
@@ -64,7 +69,7 @@ export async function listTerms(sessionId: string | null): Promise<string[]> {
 export async function addTerm(sessionId: string | null, term: string): Promise<boolean> {
   const rows = await getDb()
     .insert(blockedTerms)
-    .values({ term, sessionId })
+    .values({ term, skeleton: skeletonWord(term), sessionId })
     .onConflictDoNothing()
     .returning({ id: blockedTerms.id });
   return rows.length > 0;
@@ -85,7 +90,9 @@ export async function addTerms(sessionId: string | null, terms: string[]): Promi
   for (let start = 0; start < terms.length; start += INSERT_CHUNK) {
     const rows = await getDb()
       .insert(blockedTerms)
-      .values(terms.slice(start, start + INSERT_CHUNK).map((term) => ({ term, sessionId })))
+      .values(
+        terms.slice(start, start + INSERT_CHUNK).map((term) => ({ term, skeleton: skeletonWord(term), sessionId })),
+      )
       .onConflictDoNothing()
       .returning({ id: blockedTerms.id });
     added += rows.length;
