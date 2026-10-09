@@ -1,7 +1,17 @@
-import { and, asc, eq, inArray, isNull, or } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { getDb } from "./db";
 import { blockedTerms } from "./db/schema";
-import { skeletonWord } from "./words";
+import { matchesSkeleton, skeletonWord } from "./words";
+
+export async function matchesBlockedSkeleton(sessionId: string, keys: string[]): Promise<boolean> {
+  const targets = keys.filter(Boolean);
+  if (targets.length === 0) return false;
+  const rows = await getDb()
+    .selectDistinct({ skeleton: blockedTerms.skeleton })
+    .from(blockedTerms)
+    .where(and(ne(blockedTerms.skeleton, ""), or(isNull(blockedTerms.sessionId), eq(blockedTerms.sessionId, sessionId))));
+  return rows.some((row) => targets.some((key) => matchesSkeleton(key, row.skeleton)));
+}
 
 export async function isTermBlocked(sessionId: string, normalized: string, keys: string[] = []): Promise<boolean> {
   const skeletons = [...new Set([skeletonWord(normalized), ...keys])].filter(Boolean);
@@ -15,7 +25,8 @@ export async function isTermBlocked(sessionId: string, normalized: string, keys:
       ),
     )
     .limit(1);
-  return Boolean(row);
+  if (row) return true;
+  return matchesBlockedSkeleton(sessionId, skeletons);
 }
 
 export async function listSessionTerms(sessionId: string): Promise<string[]> {

@@ -1,3 +1,4 @@
+import { matchesBlockedSkeleton } from "../blocklist";
 import { insertEntryUnlessBlocked } from "../entries";
 import { measure } from "../metrics";
 import { hitRateLimit } from "../rate-limit";
@@ -31,12 +32,16 @@ export async function handleSubmit(io: RealtimeServer, socket: RealtimeSocket, p
 
   const normalized = normalizeWord(checked.text);
   const approve = session.settings.moderationMode === "approve";
+  const keys = blockKeys(parsed.data.text, checked.text);
+  if (await measure("submit.blocklist", () => matchesBlockedSkeleton(session.id, keys))) {
+    return { status: "rejected", reason: "blocked" };
+  }
   const row = await measure("submit.insert", () =>
     insertEntryUnlessBlocked({
       sessionId: session.id,
       text: checked.text,
       normalized,
-      blockKeys: blockKeys(parsed.data.text, checked.text),
+      blockKeys: keys,
       deviceId: socket.data.deviceId,
       status: approve ? "pending" : "visible",
     }),
