@@ -77,7 +77,7 @@ export function ReadyView({ code, sessionRef, name, pin, joinLabel, inputUrl, di
   const openAdmin = async () => {
     try {
       const response = await fetch(`/api/sessions/${code}/open-admin`, { method: "POST" });
-      router.push(response.ok ? `/s/${sessionRef}/admin` : `/masuk-admin?kode=${code}`);
+      router.push(response.ok ? `/${sessionRef}/admin` : `/masuk-admin?kode=${code}`);
     } catch {
       router.push(`/masuk-admin?kode=${code}`);
     }
@@ -87,7 +87,7 @@ export function ReadyView({ code, sessionRef, name, pin, joinLabel, inputUrl, di
     try {
       await document.documentElement.requestFullscreen?.();
     } catch {}
-    router.push(`/s/${sessionRef}/display`);
+    router.push(`/${sessionRef}/display`);
   };
 
   const live = presence.display > 0;

@@ -13,6 +13,9 @@ const nextConfig: NextConfig = {
   devIndicators: false,
   serverExternalPackages: ["argon2", "sharp", "pg", "ioredis"],
   allowedDevOrigins: ["192.168.*.*", "10.*.*.*", "172.*.*.*"],
+  async redirects() {
+    return [{ source: "/s/:ref/:path*", destination: "/:ref/:path*", permanent: false }];
+  },
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },

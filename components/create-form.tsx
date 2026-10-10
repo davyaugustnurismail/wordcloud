@@ -247,7 +247,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
         return;
       }
       const { code, ref } = (await response.json()) as { code: string; ref?: string };
-      router.push(`/s/${ref ?? code}/ready`);
+      router.push(`/${ref ?? code}/ready`);
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
       setSubmitting(false);
@@ -358,7 +358,7 @@ export function CreateForm({ library, defaults }: { library: Library; defaults: 
               Alamat sesi
             </label>
             <div className="flex min-w-0 items-center rounded-xl border border-line bg-field focus-within:border-ring">
-              <span className="shrink-0 truncate pl-3.5 text-[15px] font-semibold text-muted">{host || "…"}/s/</span>
+              <span className="shrink-0 truncate pl-3.5 text-[15px] font-semibold text-muted">{host || "…"}/</span>
               <input
                 id="alamat-sesi"
                 type="text"

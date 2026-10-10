@@ -201,7 +201,7 @@ function SessionRow({
   };
 
   const copyInputLink = async () => {
-    const ok = await copyText(`${window.location.origin}/s/${ref}/input`);
+    const ok = await copyText(`${window.location.origin}/${ref}/input`);
     if (ok) toast.success("Tautan input tersalin.");
     else toast.error("Tidak bisa menyalin tautan.");
   };
@@ -216,7 +216,7 @@ function SessionRow({
           <span className="truncate text-[15px] font-extrabold">{session.name}</span>
           <StatusChip active={active} className="xl:hidden" />
         </span>
-        <span className="truncate font-mono text-[13px] font-bold text-muted">/s/{ref}</span>
+        <span className="truncate font-mono text-[13px] font-bold text-muted">/{ref}</span>
         <span className="text-xs text-muted" suppressHydrationWarning>
           Dibuat {formatDateTime(session.createdAt)}
         </span>
@@ -242,13 +242,13 @@ function SessionRow({
       </MetaItem>
       <span role="cell" className="flex items-center gap-1.5 xl:justify-end">
         <Link
-          href={`/s/${ref}/admin`}
+          href={`/${ref}/admin`}
           className="flex h-10 items-center whitespace-nowrap rounded-[10px] bg-primary px-3 text-[13px] font-extrabold text-on-primary"
         >
           Buka admin
         </Link>
         <a
-          href={`/s/${ref}/display`}
+          href={`/${ref}/display`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex h-10 items-center gap-1.5 whitespace-nowrap rounded-[10px] border border-line px-3 text-[13px] font-bold text-fg"

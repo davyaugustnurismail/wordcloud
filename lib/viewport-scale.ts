@@ -2,12 +2,12 @@ export function applyViewportScale(pathname?: string): void {
   const path = pathname ?? location.pathname;
   let designWidth = 1280;
   let designHeight = 0;
-  if (/^\/s\/[^/]+\/display(\/|$)/.test(path)) {
+  if (/^\/[^/]+\/display(\/|$)/.test(path)) {
     designWidth = 0;
-  } else if (/^\/s\/[^/]+\/input(\/|$)/.test(path)) {
+  } else if (/^\/[^/]+\/input(\/|$)/.test(path)) {
     designWidth = 1180;
     designHeight = 820;
-  } else if (/^\/s\/[^/]+\/admin(\/|$)/.test(path) || /^\/admin(\/(?!login)|$)/.test(path)) {
+  } else if (/^\/[^/]+\/admin(\/|$)/.test(path) || /^\/admin(\/(?!login)|$)/.test(path)) {
     designWidth = 1440;
   }
 

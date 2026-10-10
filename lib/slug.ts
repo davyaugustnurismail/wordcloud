@@ -3,7 +3,28 @@ export const SLUG_MAX_LENGTH = 40;
 
 const SLUG_PATTERN = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
-export type SlugProblem = "empty" | "short" | "long" | "format";
+const RESERVED_SLUGS = new Set([
+  "admin",
+  "api",
+  "apple-icon",
+  "assets",
+  "brand",
+  "create",
+  "favicon",
+  "health",
+  "icon",
+  "join",
+  "login",
+  "logout",
+  "manifest",
+  "masuk-admin",
+  "next",
+  "robots",
+  "sitemap",
+  "static",
+]);
+
+export type SlugProblem = "empty" | "short" | "long" | "format" | "reserved";
 
 export function slugify(input: string): string {
   return input
@@ -30,6 +51,7 @@ export function slugProblem(slug: string): SlugProblem | null {
   if (slug.length < SLUG_MIN_LENGTH) return "short";
   if (slug.length > SLUG_MAX_LENGTH) return "long";
   if (!SLUG_PATTERN.test(slug)) return "format";
+  if (RESERVED_SLUGS.has(slug)) return "reserved";
   return null;
 }
 
@@ -43,5 +65,7 @@ export function slugProblemMessage(problem: SlugProblem): string {
       return `Maksimal ${SLUG_MAX_LENGTH} karakter.`;
     case "format":
       return "Hanya huruf kecil, angka, dan tanda hubung di tengah.";
+    case "reserved":
+      return "Alamat ini dipakai sistem. Pilih yang lain.";
   }
 }

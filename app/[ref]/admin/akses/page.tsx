@@ -10,7 +10,7 @@ export default async function AdminAccessPage({ params }: { params: Promise<{ re
   const session = await loadSessionForAdmin((await params).ref);
   const origin = await resolveRequestOrigin();
   const access = (await readInputAccess(session.id)) ?? { enabled: false, pin: null };
-  const inputQr = await qrSvg(`${origin}/s/${sessionRef(session)}/input`);
+  const inputQr = await qrSvg(`${origin}/${sessionRef(session)}/input`);
 
   return <AccessSettings origin={origin} slug={session.slug} initialAccess={access} inputQr={inputQr} />;
 }

@@ -40,7 +40,7 @@ function Header() {
       <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5">
         <div className="flex min-w-0 items-center gap-2.5 md:gap-3.5">
           <BrandLogo height={34} className="hidden shrink-0 md:inline-flex" />
-          <Link href={`/s/${ref}/admin`} className="truncate text-lg font-extrabold">
+          <Link href={`/${ref}/admin`} className="truncate text-lg font-extrabold">
             {name}
           </Link>
           <span className="flex h-[26px] items-center rounded-[7px] bg-surface2 px-2 font-mono text-[13px] font-bold tracking-[0.06em] md:h-[30px] md:rounded-lg md:px-2.5 md:text-[15px] md:tracking-[0.08em]">
@@ -69,7 +69,7 @@ function Header() {
             </span>
           </div>
           <a
-            href={`/s/${ref}/display`}
+            href={`/${ref}/display`}
             target="_blank"
             rel="noopener noreferrer"
             aria-label="Buka photowall di tab baru"
@@ -98,7 +98,7 @@ function Tabs() {
   const { ref } = useAdmin();
   const pathname = usePathname();
   const activeRef = useRef<HTMLAnchorElement>(null);
-  const base = `/s/${ref}/admin`;
+  const base = `/${ref}/admin`;
   const tabs = [
     { href: base, label: "Live & moderasi" },
     { href: `${base}/tema`, label: "Tema & tampilan" },
@@ -165,7 +165,7 @@ function ClearDialog() {
 function MobileNav() {
   const { ref, connected, state, actions, setClearConfirm } = useAdmin();
   const pathname = usePathname();
-  const base = `/s/${ref}/admin`;
+  const base = `/${ref}/admin`;
   const temaActive = pathname === `${base}/tema`;
   const blocklistActive = pathname === `${base}/blocklist`;
   const item = "flex h-[58px] flex-col items-center justify-center gap-1 rounded-xl text-xs font-bold disabled:opacity-50";

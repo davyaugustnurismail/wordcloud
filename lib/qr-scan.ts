@@ -1,6 +1,6 @@
 import { isValidCode, normalizeCode } from "./code";
 
-const ADMIN_PATH = /\/s\/([A-Za-z0-9]{6})\/admin(?:[/?#]|$)/;
+const ADMIN_PATH = /\/(?:s\/)?([A-Za-z0-9]{6})\/admin(?:[/?#]|$)/;
 const BARE_CODE = /^[A-Za-z0-9]{6}$/;
 
 export function sessionCodeFromQr(text: string): string | null {

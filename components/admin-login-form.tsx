@@ -56,7 +56,7 @@ export function AdminLoginForm({ initialCode }: { initialCode: string }) {
         setLoading(false);
         return;
       }
-      router.push(`/s/${code}/admin`);
+      router.push(`/${code}/admin`);
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
       setLoading(false);

@@ -20,8 +20,8 @@ export default async function ReadyPage({ params }: { params: Promise<{ ref: str
 
   const origin = await resolveRequestOrigin();
   const ref = sessionRef(session);
-  const inputUrl = `${origin}/s/${ref}/input`;
-  const [joinQr, adminQr] = await Promise.all([qrSvg(inputUrl), qrSvg(`${origin}/s/${session.code}/admin`)]);
+  const inputUrl = `${origin}/${ref}/input`;
+  const [joinQr, adminQr] = await Promise.all([qrSvg(inputUrl), qrSvg(`${origin}/${session.code}/admin`)]);
 
   return (
     <ReadyView
@@ -31,7 +31,7 @@ export default async function ReadyPage({ params }: { params: Promise<{ ref: str
       pin={ready.pin}
       joinLabel={`${new URL(origin).host}/join`}
       inputUrl={inputUrl}
-      displayUrl={`${origin}/s/${ref}/display`}
+      displayUrl={`${origin}/${ref}/display`}
       joinQr={joinQr}
       adminQr={adminQr}
     />

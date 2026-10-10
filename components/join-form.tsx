@@ -34,7 +34,7 @@ export function JoinForm() {
         return;
       }
       const body = (await response.json().catch(() => ({}))) as { ref?: string };
-      router.push(`/s/${body.ref ?? code}/input`);
+      router.push(`/${body.ref ?? code}/input`);
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
       setLoading(false);

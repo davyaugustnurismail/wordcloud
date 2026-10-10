@@ -91,7 +91,7 @@ function SlugCard({ origin, slug }: { origin: string; slug: string | null }) {
         return;
       }
       toast.success("Alamat sesi disimpan.");
-      router.replace(`/s/${draft}/admin/akses`);
+      router.replace(`/${draft}/admin/akses`);
       router.refresh();
     } catch {
       setError("Tidak bisa menghubungi server. Coba lagi.");
@@ -115,7 +115,7 @@ function SlugCard({ origin, slug }: { origin: string; slug: string | null }) {
         </label>
         <div className="flex flex-wrap gap-2.5">
           <div className="flex min-w-0 flex-[999_1_300px] items-center rounded-xl border border-line bg-field focus-within:border-ring">
-            <span className="shrink-0 truncate pl-3.5 text-[15px] font-semibold text-muted">{hostOf(origin)}/s/</span>
+            <span className="shrink-0 truncate pl-3.5 text-[15px] font-semibold text-muted">{hostOf(origin)}/</span>
             <input
               id="slug-sesi"
               type="text"
@@ -171,9 +171,9 @@ function LinksCard({ origin, inputQr }: { origin: string; inputQr: string }) {
       </div>
       <div className="flex flex-wrap items-start gap-5">
         <div className="flex min-w-0 flex-[1_1_320px] flex-col gap-2.5">
-          <LinkRow label="Halaman input" url={`${origin}/s/${ref}/input`} openLabel="Buka halaman input di tab baru" />
-          <LinkRow label="Photowall" url={`${origin}/s/${ref}/display`} openLabel="Buka photowall di tab baru" />
-          <LinkRow label="Admin sesi" url={`${origin}/s/${ref}/admin`} />
+          <LinkRow label="Halaman input" url={`${origin}/${ref}/input`} openLabel="Buka halaman input di tab baru" />
+          <LinkRow label="Photowall" url={`${origin}/${ref}/display`} openLabel="Buka photowall di tab baru" />
+          <LinkRow label="Admin sesi" url={`${origin}/${ref}/admin`} />
           <span className="text-[13px] leading-normal text-muted">
             Kode sesi untuk halaman Join: <b className="font-mono text-fg">{code}</b>
           </span>
